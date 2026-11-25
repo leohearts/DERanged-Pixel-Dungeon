@@ -42,7 +42,7 @@ public abstract class Key extends Item {
 		unique = true;
 	}
 
-	//TODO currently keys can only appear on branch = 0, add branch support here if that changes
+	//keys only match locks on the same depth and branch (main dungeon, temple, abyss)
 	public int depth;
 	public int branch;
 	

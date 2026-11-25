@@ -1832,9 +1832,9 @@ public class Hero extends Char {
 
 				boolean noKey = false;
 				if (heap.type == Type.LOCKED_CHEST){
-					noKey = Dungeon.branch != 0 || Notes.keyCount(new GoldenKey(Dungeon.depth)) < 1;
+					noKey = Notes.keyCount(new GoldenKey(Dungeon.depth, Dungeon.branch)) < 1;
 				} else if (heap.type == Type.CRYSTAL_CHEST){
-					noKey = Dungeon.branch != 0 || Notes.keyCount(new CrystalKey(Dungeon.depth)) < 1;
+					noKey = Notes.keyCount(new CrystalKey(Dungeon.depth, Dungeon.branch)) < 1;
 				}
 
 				if (noKey){
@@ -1883,12 +1883,8 @@ public class Hero extends Char {
 			boolean hasKey = false;
 			int door = Dungeon.level.map[doorCell];
 			
-			if (Dungeon.branch != 0) {
-
-				//keys currently do not apply to sub-floors
-				hasKey = false;
-
-			} else if (door == Terrain.LOCKED_DOOR
+			//keys record their branch, so temple and abyss keys only match their own floor
+			if (door == Terrain.LOCKED_DOOR
 					&& Notes.keyCount(new IronKey(Dungeon.depth, Dungeon.branch)) > 0) {
 				
 				hasKey = true;
@@ -3779,9 +3775,7 @@ public class Hero extends Char {
 				Buff.affect(this, Hunger.class).affectHunger(-4);
 			} else if (Dungeon.level.distance(pos, doorCell) <= 1) {
 				boolean hasKey = true;
-				if (Dungeon.branch != 0){
-					hasKey = false; //keys currently do not work in sub-floors
-				} else if (door == Terrain.LOCKED_DOOR) {
+				if (door == Terrain.LOCKED_DOOR) {
 					hasKey = Notes.remove(new IronKey(Dungeon.depth, Dungeon.branch));
 					if (hasKey) {
 						if (keyUseTrack != null){
@@ -3834,14 +3828,12 @@ public class Hero extends Char {
 				if (heap.type == Type.SKELETON || heap.type == Type.REMAINS) {
 					Sample.INSTANCE.play( Assets.Sounds.BONES );
 				} else if (heap.type == Type.LOCKED_CHEST){
-					//keys currently do not work in sub-floors
-					hasKey = Dungeon.branch == 0 && Notes.remove(new GoldenKey(Dungeon.depth));
+					hasKey = Notes.remove(new GoldenKey(Dungeon.depth, Dungeon.branch));
 					if (hasKey && keyUseTrack != null){
 						keyUseTrack.processGoldLockOpened();
 					}
 				} else if (heap.type == Type.CRYSTAL_CHEST){
-					//keys currently do not work in sub-floors
-					hasKey = Dungeon.branch == 0 && Notes.remove(new CrystalKey(Dungeon.depth));
+					hasKey = Notes.remove(new CrystalKey(Dungeon.depth, Dungeon.branch));
 					if (hasKey && keyUseTrack != null){
 						keyUseTrack.processCrystalLockOpened();
 					}

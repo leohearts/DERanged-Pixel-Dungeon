@@ -314,6 +314,10 @@ public class Notes {
 			return key.depth;
 		}
 
+		public int branch() {
+			return key.branch;
+		}
+
 		@Override
 		public Image icon() {
 			return new ItemSprite(key);
