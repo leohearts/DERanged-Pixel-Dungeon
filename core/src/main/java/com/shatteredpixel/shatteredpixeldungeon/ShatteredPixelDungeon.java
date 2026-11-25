@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 
 package com.shatteredpixel.shatteredpixeldungeon;
 
-import com.badlogic.gdx.utils.StringBuilder;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.TitleScene;
@@ -38,37 +37,24 @@ public class ShatteredPixelDungeon extends Game {
 	//rankings from v1.2.3 and older use a different score formula, so this reference is kept
 	public static final int v1_2_3 = 628;
 
-	//savegames from versions older than v2.4.2 are no longer supported, and data from them is ignored
-	public static final int v2_4_2 = 782;
-	public static final int v2_5_4 = 802;
-
-	public static final int v3_0_2 = 833;
+	//savegames from versions older than v3.1.1 are no longer supported, and data from them is ignored
 	public static final int v3_1_1 = 850;
 	public static final int v3_2_0 = 859;
+	public static final int v3_2_1 = 861; //last version for Android 4.4- and Java 8
+	public static final int v3_2_5 = 877;
+	public static final int v3_3_0 = 883;
 
+	//starting here we are doing 2 version codes per public update, so use code-1 to get both
+	public static final int v4_0_0 = 911;
+	
 	public ShatteredPixelDungeon( PlatformSupport platform ) {
 		super( sceneClass == null ? WelcomeScene.class : sceneClass, platform );
 
-		//pre-v2.5.3
+		//pre-v3.3.0
 		com.watabou.utils.Bundle.addAlias(
-				com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfDetectMagic.class,
-				"com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfDisarming" );
+				com.shatteredpixel.shatteredpixeldungeon.items.keys.WornKey.class,
+				"com.shatteredpixel.shatteredpixeldungeon.items.keys.SkeletonKey" );
 
-		//pre-v2.5.2
-		com.watabou.utils.Bundle.addAlias(
-				com.shatteredpixel.shatteredpixeldungeon.items.bombs.FlashBangBomb.class,
-				"com.shatteredpixel.shatteredpixeldungeon.items.bombs.ShockBomb" );
-		com.watabou.utils.Bundle.addAlias(
-				com.shatteredpixel.shatteredpixeldungeon.items.bombs.SmokeBomb.class,
-				"com.shatteredpixel.shatteredpixeldungeon.items.bombs.Flashbang" );
-
-		//pre-v2.5.0
-		com.watabou.utils.Bundle.addAlias(
-				com.shatteredpixel.shatteredpixeldungeon.actors.mobs.MobSpawner.class,
-				"com.shatteredpixel.shatteredpixeldungeon.levels.Level$Respawner" );
-		com.watabou.utils.Bundle.addAlias(
-				com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invulnerability.class,
-				"com.shatteredpixel.shatteredpixeldungeon.actors.buffs.AnkhInvulnerability" );
 	}
 	
 	@Override
@@ -160,9 +146,9 @@ public class ShatteredPixelDungeon extends Game {
 	}
 
 	public static String turnIntoRrrr(String name){
-		com.badlogic.gdx.utils.StringBuilder superBuilder = new com.badlogic.gdx.utils.StringBuilder();
+		StringBuilder superBuilder = new StringBuilder();
 		for (String word: Game.platform.splitforTextBlock(name, true)){
-			com.badlogic.gdx.utils.StringBuilder builder = new StringBuilder();
+			StringBuilder builder = new StringBuilder();
 			char[] letters = word.toCharArray();
 			for (int i = 0; i < letters.length; i++){
 				if (i == 0 && Character.isLetter(letters[i]) && letters[i] != 'x' && Random.Int(3) == 0){

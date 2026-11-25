@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.Image;
 import com.watabou.utils.Bundle;
 
-public class Corrosion extends Buff implements Hero.Doom, DamageOverTimeEffect {
+public class Corrosion extends Buff implements Hero.Doom, DamageOverTimeEffect, Buff.DOTbuff {
 
 	private float damage = 1;
 	protected float left;
@@ -72,10 +72,12 @@ public class Corrosion extends Buff implements Hero.Doom, DamageOverTimeEffect {
 		this.left = Math.max(duration, left);
 		if (this.damage < damage) this.damage = damage;
 		this.source = source;
+		if (target != null) target.needsIncomingDOTUpdate = true;
 	}
 
 	public void extend( float duration ) {
 		left += duration;
+		if (target != null) target.needsIncomingDOTUpdate = true;
 	}
 	
 
@@ -123,7 +125,14 @@ public class Corrosion extends Buff implements Hero.Doom, DamageOverTimeEffect {
 			detach();
 		}
 
+		target.needsIncomingDOTUpdate = true;
 		return true;
+	}
+
+	@Override
+	public void detach() {
+		target.needsIncomingDOTUpdate = true;
+		super.detach();
 	}
 	
 	@Override
@@ -136,4 +145,18 @@ public class Corrosion extends Buff implements Hero.Doom, DamageOverTimeEffect {
 		GLog.n(Messages.get(this, "ondeath"));
 	}
 
+	@Override
+	public int totalIncomingDMG() {
+		int total = 0;
+		float curDMG = damage;
+		for (int i = (int)Math.ceil(left); i > 0; i--){
+			total += (int)curDMG;
+			if (curDMG < (Dungeon.scalingDepth()/2)+2) {
+				curDMG++;
+			} else {
+				curDMG += 0.5f;
+			}
+		}
+		return total;
+	}
 }

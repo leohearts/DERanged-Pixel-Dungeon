@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,25 +67,23 @@ public class CurrencyIndicator extends Component {
 	
 	@Override
 	protected void layout() {
-		bullet.x = x + (width - bullet.width()) / 2;
-		bullet.y = bottom() - bullet.height();
+		gold.x = x+1;
+		gold.y = top() + 1;
 
-		energy.x = x + (width - energy.width()) / 2;
-		gold.x = x + (width - gold.width()) / 2;
-		if (bullet.visible) {
-			energy.y = bottom() - bullet.height() - energy.height()+1;
-			if (energy.visible) {
-				gold.y = bottom() - bullet.height() - energy.height() - gold.height()+2;
-			} else {
-				gold.y = bottom() - bullet.height() - gold.height()+1;
-			}
+		energy.x = x+1;
+		if (gold.visible) {
+			energy.y = top() + energy.height() - 1;
 		} else {
-			energy.y = bottom() - energy.height();
-			if (energy.visible) {
-				gold.y = bottom() - energy.height() - gold.height()+1;
-			} else {
-				gold.y = bottom() - gold.height();
-			}
+			energy.y = top() + 1;
+		}
+
+		bullet.x = x+1;
+		if (gold.visible && energy.visible) {
+			bullet.y = top() + gold.height() + energy.height() - 1;
+		} else if (gold.visible || energy.visible) {
+			bullet.y = top() + bullet.height() - 1;
+		} else {
+			bullet.y = top() + 1;
 		}
 	}
 	

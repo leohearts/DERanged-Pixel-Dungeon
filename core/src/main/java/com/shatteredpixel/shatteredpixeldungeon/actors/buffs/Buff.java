@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -222,5 +222,11 @@ public class Buff extends Actor {
 		return b.type == buffType.NEGATIVE
 				&& !(b instanceof AllyBuff)
 				&& !(b instanceof LostInventory);
+	}
+
+	//Buffs which declare their total incoming damage over time (even an average)
+	// This is used in health bar visuals to show total incoming damage
+	public interface DOTbuff {
+		int totalIncomingDMG();
 	}
 }

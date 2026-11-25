@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,7 +83,6 @@ public class MindForm extends ClericSpell {
 		return 2 + Dungeon.hero.pointsInTalent(Talent.MIND_FORM);
 	}
 
-	//TODO selecting
 	public static class targetSelector extends CellSelector.Listener {
 
 		private Bundlable effect;

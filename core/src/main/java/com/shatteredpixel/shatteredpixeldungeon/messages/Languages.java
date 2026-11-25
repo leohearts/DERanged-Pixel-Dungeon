@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ public enum Languages {
 	CZECH("čeština",        "cs", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"}),
 	HUNGARIAN("magyar",     "hu", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"}),
 	DUTCH("nederlands",     "nl", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"}),
+	SWEDISH("svenska",      "sv", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"}),
 	GREEK("ελληνικά",       "el", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"}),
 	BELARUSIAN("беларуская","be", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"}),
 	ESPERANTO("esperanto",  "eo", 	Status.X_UNFINISH, new String[]{""}, new String[]{"SPD's translators credit"});

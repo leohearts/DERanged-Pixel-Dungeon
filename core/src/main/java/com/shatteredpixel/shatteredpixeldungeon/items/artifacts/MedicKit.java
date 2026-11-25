@@ -101,8 +101,7 @@ public class MedicKit extends Artifact {
             return;
         }
         Healing healing = Buff.affect(hero, Healing.class);
-        healing.setHeal(healAmt(), 0.25f, 0);
-        healing.applyVialEffect();
+        healing.setHeal(healAmt(), 0.25f, 0, true);
         hero.sprite.operate(hero.pos);
         hero.spendAndNext(Actor.TICK);
         Sample.INSTANCE.play(Assets.Sounds.DRINK);

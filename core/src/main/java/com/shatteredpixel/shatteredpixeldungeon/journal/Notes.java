@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -382,8 +382,7 @@ public class Notes {
 		TEXT,
 		DEPTH,
 		ITEM_TYPE,
-		SPECIFIC_ITEM,
-		ITEM //for pre-3.1 save conversion
+		SPECIFIC_ITEM
 	}
 
 	public static class CustomRecord extends Record {
@@ -530,15 +529,6 @@ public class Notes {
 
 			if (bundle.contains(ITEM_CLASS)) {
 				itemClass = bundle.getClass(ITEM_CLASS);
-				if (type == CustomType.ITEM){
-					//prior to v3.1 specific item notes and item type notes were the same
-					//we assume notes are for a specific item if they're for an equipment
-					if (EquipableItem.class.isAssignableFrom(itemClass)){
-						type = CustomType.SPECIFIC_ITEM;
-					} else {
-						type = CustomType.ITEM_TYPE;
-					}
-				}
 			}
 
 			title = bundle.getString(TITLE);

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.LevelTransition;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.standard.LibraryRingRoom;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.custom.Carpet;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
 
@@ -60,6 +61,11 @@ public class LibraryRingExitRoom extends LibraryRingRoom {
 		Point p = center();
 		Painter.set(level, p, Terrain.EXIT);
 		level.transitions.add(new LevelTransition(level, level.pointToCell(p), LevelTransition.Type.REGULAR_EXIT));
+
+		Carpet carpet = new Carpet();
+		carpet.setRect(left+5, top+5, width()-10, height()-10);
+		carpet.overrideTile(level, p.x, p.y, Carpet.SKIP);
+		level.customTiles.add(carpet);
 
 		int dirX = 0, dirY = 0;
 		if (Random.Int(2) == 0){

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Snake;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BannerSprites;
 import com.shatteredpixel.shatteredpixeldungeon.effects.BlobEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
+import com.shatteredpixel.shatteredpixeldungeon.effects.CheckedCell;
 import com.shatteredpixel.shatteredpixeldungeon.effects.EmoIcon;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Flare;
 import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
@@ -55,6 +56,7 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Ripple;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
 import com.shatteredpixel.shatteredpixeldungeon.effects.SpellSprite;
+import com.shatteredpixel.shatteredpixeldungeon.effects.TargetedCell;
 import com.shatteredpixel.shatteredpixeldungeon.items.Ankh;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Honeypot;
@@ -63,6 +65,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.changer.OldAmulet;
 import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.Potion;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.InventoryScroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.CrystalBall;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.DimensionalSundial;
@@ -97,6 +100,7 @@ import com.shatteredpixel.shatteredpixeldungeon.tiles.GridTileMap;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.RaisedTerrainTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.TerrainFeaturesTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.WallBlockingTilemap;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.WallOcclusionTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.ui.ActionIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.ui.AttackIndicator;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Banner;
@@ -130,6 +134,8 @@ import com.shatteredpixel.shatteredpixeldungeon.windows.WndKeyBindings;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndMessage;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndResurrect;
+import com.shatteredpixel.shatteredpixeldungeon.windows.WndUpgrade;
+import com.watabou.gltextures.TextureCache;
 import com.watabou.glwrap.Blending;
 import com.watabou.input.ControllerHandler;
 import com.watabou.input.KeyBindings;
@@ -141,7 +147,9 @@ import com.watabou.noosa.Group;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.NoosaScript;
 import com.watabou.noosa.NoosaScriptNoLighting;
+import com.watabou.noosa.PointerArea;
 import com.watabou.noosa.SkinnedBlock;
+import com.watabou.noosa.Tilemap;
 import com.watabou.noosa.Visual;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
@@ -149,6 +157,7 @@ import com.watabou.noosa.tweeners.Tweener;
 import com.watabou.utils.Callback;
 import com.watabou.utils.DeviceCompat;
 import com.watabou.utils.GameMath;
+import com.watabou.utils.PlatformSupport;
 import com.watabou.utils.Point;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
@@ -167,10 +176,12 @@ public class GameScene extends PixelScene {
 	private SkinnedBlock water;
 	private DungeonTerrainTilemap tiles;
 	private GridTileMap visualGrid;
+	private WallOcclusionTilemap occlusion;
 	private TerrainFeaturesTilemap terrainFeatures;
 	private RaisedTerrainTilemap raisedTerrain;
 	private DungeonWallsTilemap walls;
 	private WallBlockingTilemap wallBlocking;
+	private ArrayList<Tilemap> customTilemaps = new ArrayList<>();
 	private FogOfWar fog;
 	private HeroSprite hero;
 
@@ -186,6 +197,7 @@ public class GameScene extends PixelScene {
 	private Group terrain;
 	private Group customTiles;
 	private Group levelVisuals;
+	private Group customTerrain;
 	private Group levelWallVisuals;
 	private Group customWalls;
 	private Group ripples;
@@ -201,6 +213,8 @@ public class GameScene extends PixelScene {
 	private Group statuses;
 	private Group emoicons;
 	private Group overFogEffects;
+	private Group checkedCells;
+	private Group targetedCells;
 	private Group healthIndicators;
 
 	private InventoryPane inventory;
@@ -217,7 +231,7 @@ public class GameScene extends PixelScene {
 	{
 		inGameScene = true;
 	}
-	
+
 	@Override
 	public void create() {
 		
@@ -262,6 +276,10 @@ public class GameScene extends PixelScene {
 			case 1:             Camera.main.setFollowDeadzone(0.9f);   break;
 		}
 
+		RectF insets = getCommonInsets();
+		//we want to check if large is the same as blocking here
+		float largeInsetTop = Game.platform.getSafeInsets(PlatformSupport.INSET_LRG).scale(1f/defaultZoom).top;
+
 		scene = this;
 
 		terrain = new Group();
@@ -299,16 +317,18 @@ public class GameScene extends PixelScene {
 		customTiles = new Group();
 		terrain.add(customTiles);
 
-		for( CustomTilemap visual : Dungeon.level.customTiles){
-			addCustomTile(visual);
-		}
-
 		visualGrid = new GridTileMap();
 		terrain.add( visualGrid );
 
+		occlusion = new WallOcclusionTilemap();
+		terrain.add( occlusion );
+
 		terrainFeatures = new TerrainFeaturesTilemap(Dungeon.level.plants, Dungeon.level.traps);
 		terrain.add(terrainFeatures);
-		
+
+		customTerrain = new Group();
+		terrain.add(customTerrain);
+
 		levelVisuals = Dungeon.level.addVisuals();
 		add(levelVisuals);
 
@@ -349,10 +369,6 @@ public class GameScene extends PixelScene {
 		customWalls = new Group();
 		add(customWalls);
 
-		for( CustomTilemap visual : Dungeon.level.customWalls){
-			addCustomWall(visual);
-		}
-
 		levelWallVisuals = Dungeon.level.addWallVisuals();
 		add( levelWallVisuals );
 
@@ -378,6 +394,29 @@ public class GameScene extends PixelScene {
 		add( spells );
 
 		add(overFogEffects);
+
+		checkedCells = new Group();
+		add(checkedCells);
+
+		targetedCells = new Group();
+		add(targetedCells);
+		for (TargetedCell cell : TargetedCell.cells.valueList()){
+			cell.reset(cell.pos, cell.time);
+			targetedCells.add(cell);
+		}
+
+		//set these up later so that they can influence previous tilemaps if needed
+		for( CustomTilemap visual : Dungeon.level.customTiles){
+			addCustomTile(visual);
+		}
+
+		for( CustomTilemap visual : Dungeon.level.customTerrain){
+			addCustomTerrain(visual);
+		}
+
+		for( CustomTilemap visual : Dungeon.level.customWalls){
+			addCustomWall(visual);
+		}
 		
 		statuses = new Group();
 		add( statuses );
@@ -392,19 +431,115 @@ public class GameScene extends PixelScene {
 
 		int uiSize = SPDSettings.interfaceSize();
 
+		//display cutouts can obstruct various UI elements, so we need to adjust for that sometimes
+		float heroPaneExtraWidth = insets.left;
+		float menuBarMaxLeft = uiCamera.width-insets.right-MenuPane.WIDTH;
+		int hpBarMaxWidth = 50; //default max width
+		float[] buffBarRowLimits = new float[9];
+		float[] buffBarRowAdjusts = new float[9];
+
+		if (largeInsetTop == 0 && insets.top > 0){
+				//smaller non-notch cutouts are of varying size and may obstruct various UI elements
+				// some are small hole punches, some are huge dynamic islands
+				RectF cutout = Game.platform.getDisplayCutout().scale(1f / defaultZoom);
+				//if the cutout is positioned to obstruct the hero portrait in the status pane
+				if (cutout.top < 30
+						&& cutout.left < 20
+						&& cutout.right > 12) {
+					heroPaneExtraWidth = Math.max(heroPaneExtraWidth, cutout.right-12);
+					//make sure we have space to actually move it though
+					heroPaneExtraWidth = Math.min(heroPaneExtraWidth, uiCamera.width - PixelScene.MIN_WIDTH_P);
+				}
+				//if the cutout is positioned to obstruct the menu bar
+				else if (cutout.top < 20
+						&& cutout.left < menuBarMaxLeft + MenuPane.WIDTH
+						&& cutout.right > menuBarMaxLeft) {
+					menuBarMaxLeft = Math.min(menuBarMaxLeft, cutout.left - MenuPane.WIDTH);
+					//make sure we have space to actually move it though
+					menuBarMaxLeft = Math.max(menuBarMaxLeft, PixelScene.MIN_WIDTH_P-MenuPane.WIDTH);
+				}
+				//if the cutout is positioned to obstruct the HP bar
+				else if (cutout.left < 78
+						&& cutout.top < 4
+						&& cutout.right > 32) {
+					//subtract starting position, but add a bit back due to end of bar
+					hpBarMaxWidth = Math.round(cutout.left - 32 + 4);
+					hpBarMaxWidth = Math.max(hpBarMaxWidth, 21); //cannot go below 21 (30 effective)
+				}
+				//if the cutout is positioned to obstruct the buff bar
+				if (cutout.left < 84
+						&& cutout.top < 10
+						&& cutout.right > 32
+						&& cutout.bottom > 11) {
+					int i = 1;
+					int rowTop = 11;
+					//in most cases this just obstructs one row, but dynamic island can block more =S
+					while (cutout.bottom > rowTop){
+						if (i == 1 || cutout.bottom > rowTop+2 ) { //always shorten first row
+							//subtract starting position, add a bit back to allow slight overlap
+							buffBarRowLimits[i] = cutout.left - 32 + 3;
+						} else {
+							//if row is only slightly cut off, lower it instead of limiting width
+							buffBarRowAdjusts[i] = cutout.bottom - rowTop + 1;
+							rowTop += buffBarRowAdjusts[i];
+						}
+						i++;
+						rowTop += 8;
+					}
+				}
+		}
+
+		float screentop = largeInsetTop;
+		if (screentop == 0 && uiSize == 0){
+			screentop--; //on mobile UI, if we render in fullscreen, clip the top 1px;
+		}
+
 		menu = new MenuPane();
 		menu.camera = uiCamera;
-		menu.setPos( uiCamera.width-MenuPane.WIDTH, uiSize > 0 ? 0 : 1);
+		menu.setPos( menuBarMaxLeft, screentop);
 		add(menu);
+
+		float extraRight = uiCamera.width - (menuBarMaxLeft + MenuPane.WIDTH);
+		if (extraRight > 0){
+			SkinnedBlock bar = new SkinnedBlock(extraRight, 20, TextureCache.createSolid(0x88000000));
+			bar.x = uiCamera.width - extraRight;
+			bar.camera = uiCamera;
+			add(bar);
+
+			PointerArea blocker = new PointerArea(uiCamera.width - extraRight, 0, extraRight, 20);
+			blocker.camera = uiCamera;
+			add(blocker);
+		}
 
 		status = new StatusPane( SPDSettings.interfaceSize() > 0 );
 		status.camera = uiCamera;
-		status.setRect(0, uiSize > 0 ? uiCamera.height-39 : 0, uiCamera.width, 0 );
+		StatusPane.heroPaneExtraWidth = heroPaneExtraWidth;
+		StatusPane.hpBarMaxWidth = hpBarMaxWidth;
+		StatusPane.buffBarRowMaxWidths = buffBarRowLimits;
+		StatusPane.buffBarRowAdjusts = buffBarRowAdjusts;
+		status.setRect(insets.left, uiSize > 0 ? uiCamera.height-39-insets.bottom : screentop, uiCamera.width - insets.left - insets.right, 0 );
 		add(status);
+
+		if (uiSize < 2 && largeInsetTop != 0) {
+			SkinnedBlock bar = new SkinnedBlock(uiCamera.width, largeInsetTop, TextureCache.createSolid(0x88000000));
+			bar.camera = uiCamera;
+			add(bar);
+
+			PointerArea blocker = new PointerArea(0, 0, uiCamera.width, largeInsetTop);
+			blocker.camera = uiCamera;
+			add(blocker);
+		}
 
 		boss = new BossHealthBar();
 		boss.camera = uiCamera;
-		boss.setPos( 6 + (uiCamera.width - boss.width())/2, 20);
+		boss.setPos( (uiCamera.width - boss.width())/2, screentop + (landscape() ? 7 : 26));
+		if (buffBarRowLimits[2] != 0){
+			//if we potentially have a 3rd buff bar row, lower by 7px
+			boss.setPos(boss.left(), boss.top() + 7);
+		} else if (buffBarRowAdjusts[2] != 0){
+			//
+			boss.setPos(boss.left(), boss.top() + buffBarRowAdjusts[2]);
+		}
 		add(boss);
 
 		resume = new ResumeIndicator();
@@ -439,12 +574,23 @@ public class GameScene extends PixelScene {
 		if (uiSize == 2) {
 			inventory = new InventoryPane();
 			inventory.camera = uiCamera;
-			inventory.setPos(uiCamera.width - inventory.width(), uiCamera.height - inventory.height());
+			inventory.setPos(uiCamera.width - inventory.width() - insets.right, uiCamera.height - inventory.height() - insets.bottom);
 			add(inventory);
 
-			toolbar.setRect( 0, uiCamera.height - toolbar.height() - inventory.height(), uiCamera.width, toolbar.height() );
+			toolbar.setRect( insets.left, uiCamera.height - toolbar.height() - inventory.height() - insets.bottom, uiCamera.width - insets.right, toolbar.height() );
 		} else {
-			toolbar.setRect( 0, uiCamera.height - toolbar.height(), uiCamera.width, toolbar.height() );
+			toolbar.setRect( insets.left, uiCamera.height - toolbar.height() - insets.bottom, uiCamera.width - insets.right, toolbar.height() );
+		}
+
+		if (insets.bottom > 0){
+			SkinnedBlock bar = new SkinnedBlock(uiCamera.width, insets.bottom, TextureCache.createSolid(0x88000000));
+			bar.camera = uiCamera;
+			bar.y = uiCamera.height - insets.bottom;
+			add(bar);
+
+			PointerArea blocker = new PointerArea(0, uiCamera.height - insets.bottom, uiCamera.width, insets.bottom);
+			blocker.camera = uiCamera;
+			add(blocker);
 		}
 
 		layoutTags();
@@ -457,7 +603,17 @@ public class GameScene extends PixelScene {
 				new Flare( 5, 16 ).color( 0xFFFF00, true ).show( hero, 4f ) ;
 				break;
 			case RETURN:
-				ScrollOfTeleportation.appearVFX( Dungeon.hero );
+				if (Dungeon.level.pit[Dungeon.hero.pos] && !Dungeon.hero.flying){
+					//delay this so falling into the chasm processes properly
+					ShatteredPixelDungeon.runOnRenderThread(new Callback() {
+						@Override
+						public void call() {
+							ScrollOfTeleportation.appearVFX(Dungeon.hero);
+						}
+					});
+				} else {
+					ScrollOfTeleportation.appearVFX(Dungeon.hero);
+				}
 				break;
 			case DESCEND:
 			case FALL:
@@ -521,6 +677,7 @@ public class GameScene extends PixelScene {
 					}
 
 					if (spawnersAbove > 0) {
+						GLog.newLine();
 						if (Dungeon.bossLevel()) {
 							GLog.n(Messages.get(this, "spawner_warn_final"));
 						} else {
@@ -842,7 +999,7 @@ public class GameScene extends PixelScene {
 						Actor.process();
 					}
 				};
-				
+
 				//if cpu cores are limited, game should prefer drawing the current frame
 				if (Runtime.getRuntime().availableProcessors() == 1) {
 					actorThread.setPriority(Thread.NORM_PRIORITY - 1);
@@ -934,9 +1091,9 @@ public class GameScene extends PixelScene {
 		}
 		//Camera.main.panTo(Dungeon.hero.sprite.center(), 5f);
 
-		//primarily for phones displays with notches
-		//TODO Android never draws into notch atm, perhaps allow it for center notches?
-		RectF insets = DeviceCompat.getSafeInsets();
+		//adjust spacing for elements based on display cutouts
+		// We use ALL here as some elements can be a fair but up the side of the screen
+		RectF insets = Game.platform.getSafeInsets( PlatformSupport.INSET_ALL );
 		insets = insets.scale(1f / uiCamera.zoom);
 
 		boolean tagsOnLeft = SPDSettings.flipTags();
@@ -995,13 +1152,23 @@ public class GameScene extends PixelScene {
 	}
 
 	public void addCustomTile( CustomTilemap visual){
-		customTiles.add( visual.create() );
+		Tilemap t = visual.create();
+		customTiles.add( t );
+		customTilemaps.add( t );
+	}
+
+	public void addCustomTerrain(CustomTilemap visual){
+		Tilemap t = visual.create();
+		customTerrain.add( t );
+		customTilemaps.add( t );
 	}
 
 	public void addCustomWall( CustomTilemap visual){
-		customWalls.add( visual.create() );
+		Tilemap t = visual.create();
+		customWalls.add( t );
+		customTilemaps.add( t );
 	}
-	
+
 	private void addHeapSprite( Heap heap ) {
 		ItemSprite sprite = heap.sprite = (ItemSprite)heaps.recycle( ItemSprite.class );
 		sprite.revive();
@@ -1016,14 +1183,6 @@ public class GameScene extends PixelScene {
 		heaps.add( heap.sprite );
 	}
 	
-	private void addPlantSprite( Plant plant ) {
-
-	}
-
-	private void addTrapSprite( Trap trap ) {
-
-	}
-	
 	private void addBlobSprite( final Blob gas ) {
 		if (gas.emitter == null) {
 			gases.add( new BlobEmitter( gas ) );
@@ -1032,7 +1191,7 @@ public class GameScene extends PixelScene {
 	
 	private synchronized void addMobSprite( Mob mob ) {
 		CharSprite sprite = mob.sprite();
-		sprite.visible = Dungeon.level.heroFOV[mob.pos];
+		sprite.visible = sprite.visibleOutOfFFOV || Dungeon.level.heroFOV[mob.pos];
 		mobs.add( sprite );
 		sprite.link( mob );
 		sortMobSprites();
@@ -1099,18 +1258,6 @@ public class GameScene extends PixelScene {
 	}
 	
 	// -------------------------------------------------------
-
-	public static void add( Plant plant ) {
-		if (scene != null) {
-			scene.addPlantSprite( plant );
-		}
-	}
-
-	public static void add( Trap trap ) {
-		if (scene != null) {
-			scene.addTrapSprite( trap );
-		}
-	}
 	
 	public static void add( Blob gas ) {
 		Actor.add( gas );
@@ -1134,11 +1281,7 @@ public class GameScene extends PixelScene {
 	}
 	
 	public static void add( Mob mob ) {
-		Dungeon.level.mobs.add( mob );
-		if (scene != null) {
-			scene.addMobSprite(mob);
-			Actor.add(mob);
-		}
+		add( mob, 0);
 	}
 
 	public static void addSprite( Mob mob ) {
@@ -1147,8 +1290,13 @@ public class GameScene extends PixelScene {
 	
 	public static void add( Mob mob, float delay ) {
 		Dungeon.level.mobs.add( mob );
-		scene.addMobSprite( mob );
-		Actor.addDelayed( mob, delay );
+		//mobs added on partial turns wait until next full turn to act
+		delay = (float)Math.ceil(Actor.now() + delay) - Actor.now();
+		if (scene != null) {
+			scene.addMobSprite(mob);
+			Actor.addDelayed(mob, delay);
+			mob.spendToWhole();
+		}
 	}
 	
 	public static void add( EmoIcon icon ) {
@@ -1173,9 +1321,43 @@ public class GameScene extends PixelScene {
 	}
 
 	public static void effectOverFog( Visual effect ) {
-		scene.overFogEffects.add( effect );
+		if (scene != null) scene.overFogEffects.add( effect );
 	}
 	
+	public static CheckedCell checkedCell( int pos, int source ){
+		if (scene != null) {
+			CheckedCell check = (CheckedCell) scene.checkedCells.recycle(CheckedCell.class);
+			check.reset(pos, source);
+			return check;
+		} else {
+			return null;
+		}
+	}
+
+	public static TargetedCell targetedCell(int pos, int color, float delay){
+		TargetedCell cell = targetedCell(pos, delay);
+		if (cell != null) cell.hardlight(color);
+		return cell;
+	}
+
+	public static TargetedCell targetedCell(int pos, float delay){
+		if (scene != null) {
+			TargetedCell cell;
+			synchronized (TargetedCell.cells) {
+				if (TargetedCell.cells.containsKey(pos)) {
+					cell = TargetedCell.cells.get(pos);
+					cell.reset(pos, Actor.now()+delay);
+					return cell;
+				}
+			}
+			cell = (TargetedCell) scene.targetedCells.recycle(TargetedCell.class);
+			cell.reset(pos, Actor.now()+delay);
+			return cell;
+		} else {
+			return null;
+		}
+	}
+
 	public static Ripple ripple( int pos ) {
 		if (scene != null) {
 			Ripple ripple = (Ripple) scene.ripples.recycle(Ripple.class);
@@ -1295,6 +1477,7 @@ public class GameScene extends PixelScene {
 	public static void resetMap() {
 		if (scene != null) {
 			scene.tiles.map(Dungeon.level.map, Dungeon.level.width() );
+			scene.occlusion.map(Dungeon.level.map, Dungeon.level.width() );
 			scene.visualGrid.map(Dungeon.level.map, Dungeon.level.width() );
 			scene.terrainFeatures.map(Dungeon.level.map, Dungeon.level.width() );
 			scene.raisedTerrain.map(Dungeon.level.map, Dungeon.level.width() );
@@ -1307,10 +1490,14 @@ public class GameScene extends PixelScene {
 	public static void updateMap() {
 		if (scene != null) {
 			scene.tiles.updateMap();
+			scene.occlusion.updateMap();
 			scene.visualGrid.updateMap();
 			scene.terrainFeatures.updateMap();
 			scene.raisedTerrain.updateMap();
 			scene.walls.updateMap();
+			for (Tilemap cust : scene.customTilemaps){
+				cust.updateMap();
+			}
 			updateFog();
 		}
 	}
@@ -1318,10 +1505,14 @@ public class GameScene extends PixelScene {
 	public static void updateMap( int cell ) {
 		if (scene != null) {
 			scene.tiles.updateMapCell( cell );
+			scene.occlusion.updateMapCell( cell );
 			scene.visualGrid.updateMapCell( cell );
 			scene.terrainFeatures.updateMapCell( cell );
 			scene.raisedTerrain.updateMapCell( cell );
 			scene.walls.updateMapCell( cell );
+			for (Tilemap cust : scene.customTilemaps){
+				cust.updateMapCell( cell );
+			}
 			//update adjacent cells too
 			updateFog( cell, 1 );
 		}
@@ -1353,7 +1544,7 @@ public class GameScene extends PixelScene {
 				if (lastOffset != null) {
 					offsetToInherit = lastOffset;
 				}
-				if (offsetToInherit != null) {
+				if (offsetToInherit != null && !offsetToInherit.isZero()) {
 					wnd.offset(offsetToInherit);
 					wnd.boundOffsetWithMargin(3);
 				}
@@ -1405,6 +1596,12 @@ public class GameScene extends PixelScene {
 		}
 	}
 
+	public static void nextWndOffset(Point ofs){
+		if (scene != null){
+			lastOffset = ofs;
+		}
+	}
+
 	public static void updateFog(){
 		if (scene != null) {
 			scene.fog.updateFog();
@@ -1432,9 +1629,10 @@ public class GameScene extends PixelScene {
 				if (mob.sprite != null) {
 					if (mob instanceof Mimic && mob.state == mob.PASSIVE && ((Mimic) mob).stealthy() && Dungeon.level.visited[mob.pos]){
 						//mimics stay visible in fog of war after being first seen
+						//TODO can probably migrate this to Charsprite.visibleOutOfFFOV
 						mob.sprite.visible = true;
 					} else {
-						mob.sprite.visible = Dungeon.level.heroFOV[mob.pos];
+						mob.sprite.visible = mob.sprite.visibleOutOfFFOV || Dungeon.level.heroFOV[mob.pos];
 					}
 				}
 				if (mob instanceof Ghoul){
@@ -1457,10 +1655,12 @@ public class GameScene extends PixelScene {
 				@Override
 				public void call() {
 					//greater than 0 to account for negative values (which have the first bit set to 1)
-					if (color > 0 && color < 0x01000000) {
-						scene.fadeIn(0xFF000000 | color, lightmode);
-					} else {
-						scene.fadeIn(color, lightmode);
+					if (scene != null) {
+						if (color > 0 && color < 0x01000000) {
+							scene.fadeIn(0xFF000000 | color, lightmode);
+						} else {
+							scene.fadeIn(color, lightmode);
+						}
 					}
 				}
 			});
@@ -1579,6 +1779,43 @@ public class GameScene extends PixelScene {
 		return null;
 	}
 
+	//logic for preserving inventory selection windows on scene reset (e.g. via auto-rotate)
+	private static WndBag.ItemSelector savedSelector;
+
+	@Override
+	public synchronized void saveWindows() {
+		if (members == null) return;
+
+		super.saveWindows();
+		if (scene != null && scene.inventory != null && scene.inventory.getSelector() != null){
+			savedSelector = scene.inventory.getSelector();
+		} else {
+			for (Gizmo g : members.toArray(new Gizmo[0])){
+				if (g instanceof WndBag){
+					savedSelector = ((WndBag) g).getSelector();
+				//also keeps selector active over inventory scroll cancel and upgrade window
+				} else if (g instanceof InventoryScroll.WndConfirmCancel){
+					savedSelector = ((InventoryScroll.WndConfirmCancel) g).getItemSelector();
+				} else if (g instanceof WndUpgrade){
+					savedSelector = ((WndUpgrade) g).getItemSelector();
+				}
+			}
+		}
+	}
+
+	@Override
+	public synchronized void restoreWindows() {
+		super.restoreWindows();
+		if (savedSelector != null){
+			if (scene != null && scene.inventory != null){
+				scene.inventory.setSelector(savedSelector);
+			} else {
+				addToFront(new WndBag(Dungeon.hero.belongings.backpack, savedSelector));
+			}
+			savedSelector = null;
+		}
+	}
+
 	public static boolean cancel() {
 		cellSelector.resetKeyHold();
 		if (Dungeon.hero != null && (Dungeon.hero.curAction != null || Dungeon.hero.resting)) {
@@ -1646,12 +1883,11 @@ public class GameScene extends PixelScene {
 	private static ArrayList<Object> getObjectsAtCell( int cell ){
 		ArrayList<Object> objects = new ArrayList<>();
 
-		if (cell == Dungeon.hero.pos) {
-			objects.add(Dungeon.hero);
-
-		} else if (Dungeon.level.heroFOV[cell]) {
-			Mob mob = (Mob) Actor.findChar(cell);
-			if (mob != null) objects.add(mob);
+		Char ch = Actor.findChar(cell);
+		if (ch != null && ch != Dungeon.hero){
+			if (Dungeon.level.heroFOV[cell] || Char.hasProp(ch, Char.Property.OBJECT)){
+				objects.add(ch);
+			}
 		}
 
 		Heap heap = Dungeon.level.heaps.get(cell);
@@ -1659,6 +1895,10 @@ public class GameScene extends PixelScene {
 
 		Plant plant = Dungeon.level.plants.get( cell );
 		if (plant != null) objects.add(plant);
+
+		if (cell == Dungeon.hero.pos) {
+			objects.add(Dungeon.hero);
+		}
 
 		Trap trap = Dungeon.level.traps.get( cell );
 		if (trap != null && trap.visible) objects.add(trap);
@@ -1752,7 +1992,7 @@ public class GameScene extends PixelScene {
 			if (objects.isEmpty()) {
 				textLines.add(0, Messages.get(GameScene.class, "go_here"));
 			} else if (objects.get(0) instanceof Hero) {
-				textLines.add(0, Messages.get(GameScene.class, "go_here"));
+				textLines.add(0, Messages.get(GameScene.class, "cancel"));
 			} else if (objects.get(0) instanceof Mob) {
 				if (((Mob) objects.get(0)).alignment != Char.Alignment.ENEMY) {
 					textLines.add(0, Messages.get(GameScene.class, "interact"));

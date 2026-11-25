@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,10 +90,14 @@ public class Combo extends Buff implements ActionIndicator.Action {
 	public void hit( Char enemy ) {
 
 		count++;
-		comboTime = 5f;
+		if (comboTime <= 5f) {
+			comboTime = Math.max(comboTime, 5f);
+			initialComboTime = 5f;
+		}
 
 		if (!enemy.isAlive() || (enemy.buff(Corruption.class) != null && enemy.HP == enemy.HT)){
 			comboTime = 15f + 15f*((Hero)target).pointsInTalent(Talent.CLEAVE, Talent.RK_GLADIATOR);
+			initialComboTime = comboTime;
 			if (Dungeon.hero.hasTalent(Talent.SKILL_REPEAT, Talent.RK_GLADIATOR)) {
 				if (Dungeon.hero.pointsInTalent(Talent.SKILL_REPEAT, Talent.RK_GLADIATOR) == 3) {
 					clobberUsed = false;
@@ -104,8 +108,6 @@ public class Combo extends Buff implements ActionIndicator.Action {
 				}
 			}
 		}
-
-		initialComboTime = comboTime;
 
 		if ((getHighestMove() != null)) {
 
@@ -296,7 +298,7 @@ public class Combo extends Buff implements ActionIndicator.Action {
 	public void useMove(ComboMove move){
 		if (move == ComboMove.PARRY){
 			parryUsed = true;
-			comboTime = 5f;
+			comboTime = Math.max(comboTime, 5f);
 			Invisibility.dispel();
 			Buff.affect(target, ParryTracker.class, Actor.TICK);
 			((Hero)target).spendAndNext(Actor.TICK);
@@ -345,6 +347,7 @@ public class Combo extends Buff implements ActionIndicator.Action {
 	}
 
 	private static ComboMove moveBeingUsed;
+	private static int furyHitsLeft = 0;
 
 	private void doAttack(final Char enemy) {
 
@@ -377,7 +380,6 @@ public class Combo extends Buff implements ActionIndicator.Action {
 			//special on-hit effects
 			switch (moveBeingUsed) {
 				case CLOBBER:
-					if (!wasAlly) hit(enemy);
 					//trace a ballistica to our target (which will also extend past them
 					Ballistica trajectory = new Ballistica(target.pos, enemy.pos, Ballistica.STOP_TARGET);
 					//trim it to just be the part that goes past them
@@ -393,6 +395,7 @@ public class Combo extends Buff implements ActionIndicator.Action {
 							dist--;
 						}
 					}
+					if (!wasAlly) hit(enemy);
 					if (enemy.pos == oldPos) {
 						WandOfBlastWave.throwChar(enemy, trajectory, dist, true, false, hero);
 					}
@@ -446,10 +449,16 @@ public class Combo extends Buff implements ActionIndicator.Action {
 				break;
 
 			case FURY:
-				count--;
+				if (count > 0){
+					furyHitsLeft = count;
+					count = 0;
+					detach();
+					hero.spend(hero.attackDelay());
+				}
+				furyHitsLeft--;
 				//fury attacks as many times as you have combo count
-				if (count > 0 && enemy.isAlive() && hero.canAttack(enemy) &&
-						(wasAlly || enemy.alignment != target.alignment)){
+				if (furyHitsLeft > 0 && enemy.isAlive() && hero.canAttack(enemy) &&
+						hero.paralysed == 0 && (wasAlly || enemy.alignment != target.alignment)){
 					target.sprite.attack(enemy.pos, new Callback() {
 						@Override
 						public void call() {
@@ -457,10 +466,10 @@ public class Combo extends Buff implements ActionIndicator.Action {
 						}
 					});
 				} else {
-					detach();
+					furyHitsLeft = 0;
 					Sample.INSTANCE.play(Assets.Sounds.HIT_STRONG);
 					ActionIndicator.clearAction(Combo.this);
-					hero.spendAndNext(hero.attackDelay());
+					hero.next();
 				}
 				break;
 

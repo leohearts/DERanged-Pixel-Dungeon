@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -269,7 +269,7 @@ public class LiquidMetal extends Item {
 					if (m.quantity() < m.defaultQuantity()){
 						if (quantity()*durabilityPerMetal >= m.durabilityPerUse()){
 							m.quantity(m.quantity()+1);
-							if (maxToUse < quantity()){
+							if (Math.ceil(maxToUse) < quantity()){
 								Catalog.countUses(LiquidMetal.class, (int)Math.ceil(maxToUse));
 								GLog.i(Messages.get(LiquidMetal.class, "apply", (int)Math.ceil(maxToUse)));
 								quantity -= (int)Math.ceil(maxToUse);
@@ -354,7 +354,7 @@ public class LiquidMetal extends Item {
 			if (m.defaultQuantity() != 3){
 				quantityPerWeapon = 3f / m.defaultQuantity();
 			}
-			quantityPerWeapon *= Math.pow(1.33f, Math.min(5, m.level()));
+			quantityPerWeapon *= Math.pow(1.35f, Math.min(5, m.level()));
 
 			float quantity = m.quantity()-1;
 			quantity += 0.25f + 0.0075f*m.durabilityLeft();

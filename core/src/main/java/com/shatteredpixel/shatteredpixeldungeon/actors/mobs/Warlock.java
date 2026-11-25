@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,19 +40,17 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.SpellSprite;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
-import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAggression;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.WarlockSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
-import com.watabou.utils.Callback;
 import com.watabou.utils.Random;
 
 import static com.shatteredpixel.shatteredpixeldungeon.Dungeon.hero;
 
-public class Warlock extends Mob implements Callback {
+public class Warlock extends Mob {
 	
 	private static final float TIME_TO_ZAP	= 1f;
 	
@@ -133,12 +131,6 @@ public class Warlock extends Mob implements Callback {
 			if (buff(Shrink.class) != null|| enemy.buff(TimedShrink.class) != null) dmg *= 0.6f;
 			dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
 
-			//logic for DK taking 1/2 damage from aggression stoned minions
-			if ( enemy.buff(StoneOfAggression.Aggression.class) != null
-					&& enemy.alignment == alignment
-					&& (Char.hasProp(enemy, Property.BOSS) || Char.hasProp(enemy, Property.MINIBOSS))){
-				dmg *= 0.5f;
-			}
 			if (enemy.buff(WarriorParry.BlockTrock.class) != null){
 				enemy.sprite.emitter().burst( Speck.factory( Speck.FORGE ), 15 );
 				SpellSprite.show(enemy, SpellSprite.BLOCK, 2f, 2f, 2f);
@@ -162,11 +154,6 @@ public class Warlock extends Mob implements Callback {
 	
 	public void onZapComplete() {
 		zap();
-		next();
-	}
-	
-	@Override
-	public void call() {
 		next();
 	}
 

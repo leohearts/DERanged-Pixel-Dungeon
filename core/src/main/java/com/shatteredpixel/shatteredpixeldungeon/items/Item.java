@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Degrade;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.PowerfulDegrade;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Belongings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
@@ -129,7 +130,7 @@ public class Item implements Bundlable {
 			
 			GameScene.pickUp( this, pos );
 			Sample.INSTANCE.play( Assets.Sounds.ITEM );
-			hero.spendAndNext( TIME_TO_PICK_UP );
+			hero.spendAndNext( pickupDelay() );
 			return true;
 			
 		} else {
@@ -395,10 +396,12 @@ public class Item implements Bundlable {
 		}
 	}
 
-	public void level( int value ){
+	public Item level( int value ){
 		level = value;
 
 		updateQuickslot();
+
+		return this;
 	}
 	
 	public Item upgrade() {
@@ -627,8 +630,8 @@ public class Item implements Bundlable {
 		
 		cursed	= bundle.getBoolean( CURSED );
 
-		//only want to populate slot on first load.
-		if (Dungeon.hero == null) {
+		//only want to populate slots when restoring belongings
+		if (Belongings.bundleRestoring) {
 			if (bundle.contains(QUICKSLOT)) {
 				Dungeon.quickslot.setSlot(bundle.getInt(QUICKSLOT), this);
 			}
@@ -785,6 +788,10 @@ public class Item implements Bundlable {
 
 	public float castDelay( Char user, int cell ){
 		return TIME_TO_THROW;
+	}
+
+	public float pickupDelay(){
+		return TIME_TO_PICK_UP;
 	}
 	
 	protected static Hero curUser = null;

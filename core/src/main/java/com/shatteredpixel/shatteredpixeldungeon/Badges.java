@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.remains.RemainsItem;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ScrollOfMetamorphosis;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfEnchantment;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Explosive;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Bestiary;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
@@ -131,9 +132,6 @@ public class Badges {
 		ITEMS_CRAFTED_3             ( 47 ),
 		BOSS_SLAIN_2                ( 48 ),
 		BOSS_SLAIN_3                ( 49 ),
-		ALL_POTIONS_IDENTIFIED      , //still exists internally for pre-2.5 saves
-		ALL_PILLS_IDENTIFIED      	, //still exists internally for pre-2.5 saves
-		ALL_SCROLLS_IDENTIFIED      , //still exists internally for pre-2.5 saves
 		CATALOG_POTIONS_SCROLLS     ( 50 ),
 		DEATH_FROM_ENEMY_MAGIC      ( 51 ),
 		DEATH_FROM_FRIENDLY_MAGIC   ( 52 ),
@@ -177,8 +175,6 @@ public class Badges {
 		ITEMS_CRAFTED_4             ( 77 ),
 		ITEMS_CRAFTED_5             ( 78 ),
 		BOSS_SLAIN_4                ( 79 ),
-		ALL_RINGS_IDENTIFIED        , //still exists internally for pre-2.5 saves
-		ALL_ARTIFACTS_IDENTIFIED    , //still exists internally for pre-2.5 saves
 		ALL_RARE_ENEMIES            ( 80, BadgeType.JOURNAL ), //no longer all, just 10 as of v3.1
 		DEATH_FROM_GRIM_TRAP        ( 81 ), //also disintegration traps
 		VICTORY                     ( 82 ),
@@ -193,13 +189,9 @@ public class Badges {
 		ITEM_LEVEL_5                ( 97 ),
 		LEVEL_REACHED_5             ( 98 ),
 		HAPPY_END                   ( 99 ),
-		HAPPY_END_REMAINS           ( 100 ),
-		RODNEY                      ( 101, BadgeType.JOURNAL ),
-		ALL_WEAPONS_IDENTIFIED      , //still exists internally for pre-2.5 saves
-		ALL_ARMOR_IDENTIFIED        , //still exists internally for pre-2.5 saves
-		ALL_WANDS_IDENTIFIED        , //still exists internally for pre-2.5 saves
-		ALL_SPELLBOOKS_IDENTIFIED   , //still exists internally for pre-2.5 saves
-		ALL_ITEMS_IDENTIFIED        , //still exists internally for pre-2.5 saves
+		VICTORY_RANDOM              ( 100 ),
+		HAPPY_END_REMAINS           ( 101 ),
+		RODNEY                      ( 102, BadgeType.JOURNAL ),
 		VICTORY_WARRIOR,
 		VICTORY_MAGE,
 		VICTORY_ROGUE,
@@ -207,8 +199,8 @@ public class Badges {
 		VICTORY_DUELIST,
 		VICTORY_CLERIC,
 		VICTORY_RAT_KING,
-		VICTORY_ALL_CLASSES         ( 102, BadgeType.GLOBAL ),
-		DEATH_FROM_ALL              ( 103, BadgeType.GLOBAL ),
+		VICTORY_ALL_CLASSES         ( 103, BadgeType.GLOBAL ),
+		DEATH_FROM_ALL              ( 104, BadgeType.GLOBAL ),
 		BOSS_SLAIN_3_GLADIATOR,
 		BOSS_SLAIN_3_BERSERKER,
 		BOSS_SLAIN_3_VETERAN,
@@ -232,13 +224,13 @@ public class Badges {
 		BOSS_SLAIN_3_PRIEST,
 		BOSS_SLAIN_3_PALADIN,
 		BOSS_SLAIN_3_RAT_KING,
-		BOSS_SLAIN_3_ALL_SUBCLASSES ( 104, BadgeType.GLOBAL ),
-		BOSS_CHALLENGE_3            ( 105 ),
-		BOSS_CHALLENGE_4            ( 106 ),
-		RESEARCHER_4                ( 107, BadgeType.JOURNAL ),
-		GAMES_PLAYED_4              ( 108, BadgeType.GLOBAL ),
-		HIGH_SCORE_4                ( 109 ),
-		CHAMPION_1                  ( 110 ),
+		BOSS_SLAIN_3_ALL_SUBCLASSES ( 105, BadgeType.GLOBAL ),
+		BOSS_CHALLENGE_3            ( 106 ),
+		BOSS_CHALLENGE_4            ( 107 ),
+		RESEARCHER_4                ( 108, BadgeType.JOURNAL ),
+		GAMES_PLAYED_4              ( 109, BadgeType.GLOBAL ),
+		HIGH_SCORE_4                ( 110 ),
+		CHAMPION_1                  ( 111 ),
 
 		//diamond
 		PACIFIST_ASCENT             ( 120 ),
@@ -335,7 +327,17 @@ public class Badges {
 	
 	private static final HashSet<String> removedBadges = new HashSet<>();
 	static{
-		//no removed badges currently
+		//used only for save conversion since v2.5.0, actually removed in v4.0.0
+		removedBadges.add("ALL_WEAPONS_IDENTIFIED");
+		removedBadges.add("ALL_ARMOR_IDENTIFIED");
+		removedBadges.add("ALL_WANDS_IDENTIFIED");
+		removedBadges.add("ALL_RINGS_IDENTIFIED");
+		removedBadges.add("ALL_ARTIFACTS_IDENTIFIED");
+		removedBadges.add("ALL_POTIONS_IDENTIFIED");
+		removedBadges.add("ALL_SCROLLS_IDENTIFIED");
+		removedBadges.add("ALL_ITEMS_IDENTIFIED");
+		removedBadges.add("ALL_PILLS_IDENTIFIED");
+		removedBadges.add("ALL_SPELLBOOKS_IDENTIFIED");
 	}
 
 	private static final HashMap<String, String> renamedBadges = new HashMap<>();
@@ -1216,6 +1218,15 @@ public class Badges {
 		local.add( badge );
 		displayBadge( badge );
 
+		//technically player can also not spend talent points if they want for some reason
+		if (Statistics.qualifiedForRandomVictoryBadge
+				&& Dungeon.hero.subClass != null
+				&& Dungeon.hero.armorAbility != null){
+			badge = Badge.VICTORY_RANDOM;
+			local.add( badge );
+			displayBadge( badge );
+		}
+
 		badge = victoryClassBadges.get(Dungeon.hero.heroClass);
 		if (badge == null) return;
 		local.add( badge );
@@ -1235,8 +1246,8 @@ public class Badges {
 	}
 
 	public static void validateTakingTheMick(Object cause){
-		if (cause == Dungeon.hero &&
-				Dungeon.hero.belongings.attackingWeapon() instanceof Pickaxe
+		if ((cause == Dungeon.hero || cause instanceof Explosive.ExplosiveCurseBomb)
+				&& Dungeon.hero.belongings.attackingWeapon() instanceof Pickaxe
 				&& Dungeon.hero.belongings.attackingWeapon().level() >= 20){
 			local.add( Badge.TAKING_THE_MICK );
 			displayBadge(Badge.TAKING_THE_MICK);
@@ -1466,17 +1477,7 @@ public class Badges {
 			{Badge.DEATH_FROM_ENEMY_MAGIC, Badge.DEATH_FROM_ALL},
 			{Badge.DEATH_FROM_FRIENDLY_MAGIC, Badge.DEATH_FROM_ALL},
 			{Badge.DEATH_FROM_SACRIFICE, Badge.DEATH_FROM_ALL},
-			{Badge.DEATH_FROM_GRIM_TRAP, Badge.DEATH_FROM_ALL},
-
-			{Badge.ALL_WEAPONS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_ARMOR_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_WANDS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_SPELLBOOKS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_RINGS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_ARTIFACTS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_POTIONS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_PILLS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED},
-			{Badge.ALL_SCROLLS_IDENTIFIED, Badge.ALL_ITEMS_IDENTIFIED}
+			{Badge.DEATH_FROM_GRIM_TRAP, Badge.DEATH_FROM_ALL}
 	};
 	
 	public static List<Badge> filterReplacedBadges( List<Badge> badges ) {

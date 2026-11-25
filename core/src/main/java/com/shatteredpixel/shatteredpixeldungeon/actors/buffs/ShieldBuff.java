@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ public abstract class ShieldBuff extends Buff {
 		if (target != null) target.needsShieldUpdate = true;
 	}
 
-	//doesn't add shield, but postpones it detereorating
+	//doesn't add shield, but postpones it deteriorating
 	public void delay( float value ){
 		spend(value);
 	}

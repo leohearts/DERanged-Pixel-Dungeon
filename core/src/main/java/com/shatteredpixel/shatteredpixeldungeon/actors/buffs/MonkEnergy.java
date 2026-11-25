@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,10 +61,9 @@ public class MonkEnergy extends Buff implements ActionIndicator.Action {
 
 	{
 		type = buffType.POSITIVE;
-		revivePersists = true;
 	}
 
-	public float energy;
+	public float energy = 0;
 	public int cooldown; //currently unused, abilities had cooldowns prior to v2.5
 
 	private static final float MAX_COOLDOWN = 5;
@@ -113,6 +112,12 @@ public class MonkEnergy extends Buff implements ActionIndicator.Action {
 
 		spend(TICK);
 		return true;
+	}
+
+	@Override
+	public void detach() {
+		super.detach();
+		ActionIndicator.clearAction();
 	}
 
 	@Override
@@ -195,7 +200,11 @@ public class MonkEnergy extends Buff implements ActionIndicator.Action {
 		}
 		energyGain *= enGainMulti;
 
-		energy = Math.min(energy+energyGain, energyCap());
+		energy += energyGain;
+		//if we kill while using an ability, don't apply the cap yet, will be enforced after spending
+		if (target.buff(MonkAbility.UnarmedAbilityTracker.class) == null){
+			energy = Math.min(energy, energyCap());
+		}
 
 		if (energy >= 1 && cooldown == 0){
 			ActionIndicator.setAction(this);
@@ -210,6 +219,7 @@ public class MonkEnergy extends Buff implements ActionIndicator.Action {
 
 	public void abilityUsed( MonkAbility abil ){
 		energy -= abil.energyCost();
+		energy = Math.min(energy, energyCap());
 
 		if (target instanceof Hero && ((Hero) target).hasTalent(Talent.ENERGY_BARRIER, Talent.RK_MONK)) {
 			Buff.affect(target, Barrier.class).incShield(abil.energyCost()*(3+2*(((Hero) target).pointsInTalent(Talent.ENERGY_BARRIER, Talent.RK_MONK))));

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -380,30 +380,33 @@ public class DM300 extends Mob {
 	public void ventGas( Char target ){
 		Dungeon.hero.interrupt();
 
-		int gasVented = 0;
-		Class<? extends Blob> usedGas = ToxicGas.class;
-		if (buff(WarpedEnemy.BossEffect.class) != null){
-			usedGas = ConfusionGas.class;
-		}
+		final Class<? extends Blob> usedGas = buff(WarpedEnemy.BossEffect.class) != null ? ConfusionGas.class : ToxicGas.class;
 
 		Ballistica trajectory = new Ballistica(pos, target.pos, Ballistica.STOP_TARGET);
 
 		int gasMulti = Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 2 : 1;
 
-		for (int i : trajectory.subPath(0, trajectory.dist)){
-			GameScene.add(Blob.seed(i, 20*gasMulti, usedGas));
-			gasVented += 20*gasMulti;
-		}
-
-		GameScene.add(Blob.seed(trajectory.collisionPos, 100*gasMulti, usedGas));
-
-		if (gasVented < 250*gasMulti){
-			int toVentAround = (int)Math.ceil(((250*gasMulti) - gasVented)/8f);
-			for (int i : PathFinder.NEIGHBOURS8){
-				GameScene.add(Blob.seed(pos+i, toVentAround, usedGas));
+		//we delay the gas generation to just before the target acts, to prevent cases where partial turns can result in instant gas damage
+		Actor.addDelayed(new Actor() {
+			{ actPriority = VFX_PRIO; } //add the gas before any other actor at that time
+			@Override
+			protected boolean act() {
+				int gasVented = 0;
+				GameScene.add(Blob.seed(trajectory.collisionPos, 100*gasMulti, usedGas));
+				for (int i : trajectory.subPath(0, trajectory.dist)){
+					GameScene.add(Blob.seed(i, 20*gasMulti, usedGas));
+					gasVented += 20*gasMulti;
+				}
+				if (gasVented < 250*gasMulti){
+					int toVentAround = (int)Math.ceil(((250*gasMulti) - gasVented)/8f);
+					for (int i : PathFinder.NEIGHBOURS8){
+						GameScene.add(Blob.seed(pos+i, toVentAround, usedGas));
+					}
+				}
+				Actor.remove(this);
+				return true;
 			}
-
-		}
+		}, target.cooldown());
 
 	}
 
@@ -467,11 +470,12 @@ public class DM300 extends Mob {
 				pos++;
 			}
 		}
+		float delay = GameMath.gate(TICK, (int)Math.ceil(target.cooldown()), 3*TICK);
 		for (int i : rockCells){
-			sprite.parent.add(new TargetedCell(i, 0xFF0000));
+			GameScene.targetedCell(i, delay);
 		}
 		//don't want to overly punish players with slow move or attack speed
-		Buff.append(this, FallingRockBuff.class, GameMath.gate(TICK, (int)Math.ceil(target.cooldown()), 3*TICK)).setRockPositions(rockCells);
+		Buff.append(this, FallingRockBuff.class, delay).setRockPositions(rockCells);
 
 	}
 
@@ -567,7 +571,7 @@ public class DM300 extends Mob {
 		((DM300Sprite)sprite).updateChargeState(false);
 
 		//adjust turns since last ability to prevent DM immediately using an ability when charge ends
-		turnsSinceLastAbility = Math.max(turnsSinceLastAbility, MIN_COOLDOWN-3);
+		turnsSinceLastAbility = Math.min(turnsSinceLastAbility, MIN_COOLDOWN-3);
 
 		if (pylonsActivated < totalPylonsToActivate()){
 			yell(Messages.get(this, "charge_lost"));
@@ -738,10 +742,17 @@ public class DM300 extends Mob {
 
 		@Override
 		public void affectChar(Char ch) {
-			if (!(ch instanceof DM300)){
-				Buff.prolong(ch, Paralysis.class, Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 5 : 3);
-				if (ch == Dungeon.hero) {
-					Statistics.bossScores[2] -= 100;
+			if (!(ch instanceof DM300 || ch instanceof Pylon)){
+				if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES)) {
+					ch.damage(Random.NormalIntRange(10, 20), this);
+				} else {
+					ch.damage(Random.NormalIntRange(6, 12), this);
+				}
+				if (ch.isAlive()) {
+					Buff.prolong(ch, Paralysis.class, Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 5 : 3);
+				} else if (ch == Dungeon.hero){
+					Dungeon.fail( target );
+					GLog.n( Messages.get( GnollGeomancer.class, "rockfall_kill") );
 				}
 			}
 		}

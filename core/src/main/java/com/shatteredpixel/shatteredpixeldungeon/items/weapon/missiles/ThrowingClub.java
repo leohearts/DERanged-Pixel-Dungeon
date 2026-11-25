@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,12 @@ public class ThrowingClub extends MissileWeapon {
 		baseUses = 12;
 		sticky = false;
 	}
-	
+
+	@Override
+	public float pickupDelay() {
+		return 0; //picked up instantly
+	}
+
 	@Override
 	public int max(int lvl) {
 		return  4 * tier +                  //8 base, down from 10
