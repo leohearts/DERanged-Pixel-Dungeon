@@ -187,9 +187,6 @@ public abstract class Level implements Bundlable {
 	
 	public Feeling feeling = Feeling.NONE;
 	
-	public int entrance;
-	public int exit;
-
 	public ArrayList<LevelTransition> transitions;
 
 	//when a boss level has become locked.

@@ -63,23 +63,24 @@ public class ExitRoom extends StandardRoom {
 			door.set( Room.Door.Type.REGULAR );
 		}
 
-		if (Dungeon.branch == AbyssLevel.BRANCH) {
-			for (int i = 0; i < Random.IntRange(1, 5); i++) {
-				FinalFroggit npc = new FinalFroggit();
-				do {
-					npc.pos = level.pointToCell(random());
-				} while (level.map[npc.pos] != Terrain.EMPTY || level.findMob(npc.pos) != null || npc.pos == level.exit);
-				npc.state = npc.SLEEPING;
-				level.mobs.add(npc);
-			}
-		}
-		
 		int exit = level.pointToCell(random( 2 ));
 		Painter.set( level, exit, Terrain.EXIT );
 		if (Dungeon.branch == 2) {
 			level.transitions.add(new LevelTransition(level, exit, LevelTransition.Type.BRANCH_EXIT, Dungeon.depth+1, Dungeon.branch, LevelTransition.Type.BRANCH_ENTRANCE));
 		} else {
 			level.transitions.add(new LevelTransition(level, exit, LevelTransition.Type.REGULAR_EXIT));
+		}
+
+		//the exit cell is no longer EMPTY at this point, so froggits never spawn on it
+		if (Dungeon.branch == AbyssLevel.BRANCH) {
+			for (int i = 0; i < Random.IntRange(1, 5); i++) {
+				FinalFroggit npc = new FinalFroggit();
+				do {
+					npc.pos = level.pointToCell(random());
+				} while (level.map[npc.pos] != Terrain.EMPTY || level.findMob(npc.pos) != null);
+				npc.state = npc.SLEEPING;
+				level.mobs.add(npc);
+			}
 		}
 	}
 	
