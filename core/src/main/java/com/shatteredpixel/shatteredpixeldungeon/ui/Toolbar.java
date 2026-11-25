@@ -32,6 +32,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Belongings;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.gun.Gun;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -242,6 +243,25 @@ public class Toolbar extends Component {
 			@Override
 			public GameAction keyAction() {
 				if (btnWait.active) return SPDAction.REST;
+				else				return null;
+			}
+		});
+
+		//hidden button for reload keybind, reloads the main hand gun if it isn't full
+		add(new Button(){
+			@Override
+			protected void onClick() {
+				if (Dungeon.hero != null && Dungeon.hero.ready && !GameScene.cancel()
+						&& Dungeon.hero.belongings.weapon() instanceof Gun
+						&& !((Gun) Dungeon.hero.belongings.weapon()).isAllLoaded()) {
+					examining = false;
+					Dungeon.hero.belongings.weapon().execute(Dungeon.hero, Gun.AC_RELOAD);
+				}
+			}
+
+			@Override
+			public GameAction keyAction() {
+				if (btnWait.active) return SPDAction.RELOAD;
 				else				return null;
 			}
 		});
