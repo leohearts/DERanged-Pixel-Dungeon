@@ -255,8 +255,11 @@ public class Shopkeeper extends NPC {
 				int i = 0;
 				options[i++] = Messages.get(Shopkeeper.this, "sell");
 				options[i++] = Messages.get(Shopkeeper.this, "talk");
+				//some item values are random, so charge exactly what is shown here
+				final int[] prices = new int[buybackItems.size()];
 				for (Item item : buybackItems){
-					options[i] = Messages.get(Heap.class, "for_sale", item.value(), Messages.titleCase(item.title()));
+					prices[i-2] = item.value();
+					options[i] = Messages.get(Heap.class, "for_sale", prices[i-2], Messages.titleCase(item.title()));
 					if (options[i].length() > maxLen) options[i] = options[i].substring(0, maxLen-3) + "...";
 					i++;
 				}
@@ -272,8 +275,8 @@ public class Shopkeeper extends NPC {
 						} else if (index > 1){
 							GLog.i(Messages.get(Shopkeeper.this, "buyback"));
 							Item returned = buybackItems.remove(index-2);
-							Dungeon.gold -= returned.value();
-							Statistics.goldCollected -= returned.value();
+							Dungeon.gold -= prices[index-2];
+							Statistics.goldCollected -= prices[index-2];
 							if (returned instanceof MissileWeapon && returned.isUpgradable()){
 								Buff.affect(Dungeon.hero, MissileWeapon.UpgradedSetTracker.class).levelThresholds.put(((MissileWeapon) returned).setID, returned.level());
 							}
@@ -286,7 +289,7 @@ public class Shopkeeper extends NPC {
 					@Override
 					protected boolean enabled(int index) {
 						if (index > 1){
-							return Dungeon.gold >= buybackItems.get(index-2).value();
+							return Dungeon.gold >= prices[index-2];
 						} else {
 							return super.enabled(index);
 						}

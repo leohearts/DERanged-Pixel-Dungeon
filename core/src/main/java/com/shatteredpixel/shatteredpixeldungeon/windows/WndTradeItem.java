@@ -88,10 +88,11 @@ public class WndTradeItem extends WndInfoItem {
 				pos = warn.bottom();
 			}
 
-			RedButton btnSell = new RedButton( Messages.get(this, "sell", item.value()) ) {
+			final int price = item.value();
+			RedButton btnSell = new RedButton( Messages.get(this, "sell", price) ) {
 				@Override
 				protected void onClick() {
-					sell( item, finalShop);
+					sell( item, finalShop, price );
 					hide();
 				}
 			};
@@ -103,11 +104,11 @@ public class WndTradeItem extends WndInfoItem {
 
 		} else {
 
-			int priceAll= item.value();
+			final int priceAll = item.value();
 			RedButton btnSell1 = new RedButton( Messages.get(this, "sell_1", priceAll / item.quantity()) ) {
 				@Override
 				protected void onClick() {
-					sellOne( item, finalShop );
+					sellOne( item, finalShop, priceAll / item.quantity() );
 					hide();
 				}
 			};
@@ -117,7 +118,7 @@ public class WndTradeItem extends WndInfoItem {
 			RedButton btnSellAll = new RedButton( Messages.get(this, "sell_all", priceAll ) ) {
 				@Override
 				protected void onClick() {
-					sell( item, finalShop );
+					sell( item, finalShop, priceAll );
 					hide();
 				}
 			};
@@ -152,7 +153,7 @@ public class WndTradeItem extends WndInfoItem {
 			@Override
 			protected void onClick() {
 				hide();
-				buy( heap );
+				buy( heap, price );
 			}
 		};
 		btnBuy.setRect( 0, pos + GAP, width, BTN_HEIGHT );
@@ -235,11 +236,8 @@ public class WndTradeItem extends WndInfoItem {
 		if (selling) Shopkeeper.sell();
 	}
 
-	public static void sell( Item item ) {
-		sell(item, null);
-	}
-
-	public static void sell( Item item, Shopkeeper shop ) {
+	//price is the value shown to the player when the window opened, as some item values are random
+	public static void sell( Item item, Shopkeeper shop, int price ) {
 		
 		Hero hero = Dungeon.hero;
 		
@@ -255,7 +253,7 @@ public class WndTradeItem extends WndInfoItem {
 		//selling items in the sell interface doesn't spend time
 		hero.spend(-hero.cooldown());
 
-		new Gold( item.value() ).doPickUp( hero );
+		new Gold( price ).doPickUp( hero );
 
 		if (shop != null){
 			shop.buybackItems.add(item);
@@ -265,14 +263,10 @@ public class WndTradeItem extends WndInfoItem {
 		}
 	}
 
-	public static void sellOne( Item item ) {
-		sellOne( item, null );
-	}
-
-	public static void sellOne( Item item, Shopkeeper shop ) {
+	public static void sellOne( Item item, Shopkeeper shop, int price ) {
 		
 		if (item.quantity() <= 1) {
-			sell( item, shop );
+			sell( item, shop, price );
 		} else {
 			
 			Hero hero = Dungeon.hero;
@@ -282,7 +276,7 @@ public class WndTradeItem extends WndInfoItem {
 			//selling items in the sell interface doesn't spend time
 			hero.spend(-hero.cooldown());
 
-			new Gold( item.value() ).doPickUp( hero );
+			new Gold( price ).doPickUp( hero );
 
 			if (shop != null){
 				shop.buybackItems.add(item);
@@ -293,12 +287,11 @@ public class WndTradeItem extends WndInfoItem {
 		}
 	}
 	
-	private void buy( Heap heap ) {
+	private void buy( Heap heap, int price ) {
 		
 		Item item = heap.pickUp();
 		if (item == null) return;
 		
-		int price = Shopkeeper.sellPrice( item );
 		Dungeon.gold -= price;
 		Catalog.countUses(Gold.class, price);
 		
