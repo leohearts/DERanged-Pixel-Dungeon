@@ -52,7 +52,12 @@ public class Bag extends Item implements Iterable<Item> {
 	public ArrayList<Item> items = new ArrayList<>();
 
 	public int capacity(){
-		return 20; // default container size
+		return 20 + extraSlots(); // default container size
+	}
+
+	//every container except the cheese chest gains a row of slots once tier 4 talents are unlocked
+	public static int extraSlots(){
+		return Dungeon.hero != null && Dungeon.hero.tiersUnlocked() >= 4 ? 5 : 0;
 	}
 
 	//if an item is being quick-used from the bag, the bag should take on its targeting properties

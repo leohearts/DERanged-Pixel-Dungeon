@@ -185,7 +185,7 @@ public class InventoryPane extends Component {
 		add(promptTxt);
 
 		bagItems = new ArrayList<>();
-		for (int i = 0; i < 20; i++){
+		for (int i = 0; i < 20 + 5; i++){ //enough slots for the tier 4 extra row
 			InventorySlot btn = new InventoryPaneSlot(null);
 			bagItems.add(btn);
 			add(btn);
@@ -209,13 +209,18 @@ public class InventoryPane extends Component {
 		updateInventory();
 
 		width = WIDTH;
-		height = HEIGHT;
+		height = paneHeight();
+	}
+
+	//an extra row of slots appears once containers gain extra capacity
+	public static int paneHeight(){
+		return HEIGHT + (Bag.extraSlots() > 0 ? SLOT_HEIGHT+1 : 0);
 	}
 
 	@Override
 	protected void layout() {
 		width = WIDTH;
-		height = HEIGHT;
+		height = paneHeight();
 
 		bg.x = x;
 		bg.y = y;
@@ -326,7 +331,13 @@ public class InventoryPane extends Component {
 		}
 
 		int j = 0;
-		for (int i = 0; i < 20; i++){
+		int slots = 20 + Bag.extraSlots();
+		for (int i = 0; i < bagItems.size(); i++){
+			bagItems.get(i).visible = i < slots;
+			if (i >= slots){
+				bagItems.get(i).item(null);
+				continue;
+			}
 			if (i == 0 && lastBag != stuff.backpack){
 				bagItems.get(i).item(lastBag);
 				continue;
@@ -342,6 +353,10 @@ public class InventoryPane extends Component {
 			} else {
 				bagItems.get(i).item(null);
 			}
+		}
+
+		if (height != 0 && height != paneHeight()){
+			GameScene.layoutInvPane();
 		}
 
 		if (selector == null) {

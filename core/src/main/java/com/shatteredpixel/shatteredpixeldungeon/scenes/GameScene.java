@@ -1589,6 +1589,17 @@ public class GameScene extends PixelScene {
 		}
 	}
 
+	//keeps the inventory pane bottom-aligned when its height changes
+	public static void layoutInvPane(){
+		if (scene != null && scene.inventory != null){
+			scene.inventory.setPos(scene.inventory.left(), scene.inventory.bottom() - InventoryPane.paneHeight());
+			if (scene.inventory.visible){
+				scene.toolbar.setPos(scene.toolbar.left(), scene.inventory.top()-scene.toolbar.height());
+			}
+			layoutTags();
+		}
+	}
+
 	public static void centerNextWndOnInvPane(){
 		if (scene != null && scene.inventory != null && scene.inventory.visible){
 			lastOffset = new Point((int)scene.inventory.centerX() - uiCamera.width/2,
