@@ -126,6 +126,8 @@ public abstract class Actor implements Bundlable {
 		int incomingID = bundle.getInt( ID );
 		if (Actor.findById(incomingID) == null){
 			id = incomingID;
+			//a restored id must never be handed out again, or a new actor would replace this one in ids
+			nextID = Math.max(nextID, incomingID + 1);
 		} else {
 			id = nextID++;
 		}
