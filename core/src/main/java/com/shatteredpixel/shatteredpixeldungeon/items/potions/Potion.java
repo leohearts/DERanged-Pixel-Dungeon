@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,6 +54,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.pills.PillOfParalysis;
 import com.shatteredpixel.shatteredpixeldungeon.items.pills.PillOfToxin;
 import com.shatteredpixel.shatteredpixeldungeon.items.pills.PillOfVitamin;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.AquaBrew;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.Brew;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfHoneyedHealing;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfCleansing;
@@ -340,7 +341,7 @@ public class Potion extends Item {
 			}
 			shatter( cell );
 
-			if (!anonymous) {
+			if (!anonymous && (mustThrowPots.contains(getClass()) || canThrowPots.contains(getClass()) || this instanceof Brew)) {
 				Catalog.countUse(getClass());
 				if (Random.Float() < talentChance) {
 					Talent.onPotionUsed(curUser, cell, talentFactor, this);

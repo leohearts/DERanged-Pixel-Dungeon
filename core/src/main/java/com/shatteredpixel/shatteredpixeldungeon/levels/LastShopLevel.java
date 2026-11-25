@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -177,8 +177,6 @@ public class LastShopLevel extends RegularLevel {
 			case Terrain.WALL_DECO:
 			case Terrain.EMPTY_DECO:
 				return Messages.get(CityLevel.class, "deco_desc");
-			case Terrain.EMPTY_SP:
-				return Messages.get(CityLevel.class, "sp_desc");
 			case Terrain.STATUE:
 			case Terrain.STATUE_SP:
 				return Messages.get(CityLevel.class, "statue_desc");

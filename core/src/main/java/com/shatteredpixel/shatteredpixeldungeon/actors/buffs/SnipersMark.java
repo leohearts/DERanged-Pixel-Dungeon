@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,14 +50,12 @@ public class SnipersMark extends FlavourBuff implements ActionIndicator.Action {
 	public void set(int object, float bonus){
 		this.object = object;
 		this.percentDmgBonus = bonus;
+		SpiritBow bow = Dungeon.hero.belongings.getItem(SpiritBow.class);
+		if (bow != null) {
+			ActionIndicator.setAction(this);
+		}
 	}
-	
-	@Override
-	public boolean attachTo(Char target) {
-		ActionIndicator.setAction(this);
-		return super.attachTo(target);
-	}
-	
+
 	@Override
 	public void detach() {
 		super.detach();

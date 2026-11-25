@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,11 @@ public class Explosive extends Weapon.Enchantment {
 	@Override
 	public int proc( Weapon weapon, Char attacker, Char defender, int damage ) {
 
+		if (weapon instanceof MissileWeapon
+				&& ((MissileWeapon)weapon).parent != null && ((MissileWeapon) weapon).parent.enchantment instanceof Explosive){
+			durability = ((Explosive) ((MissileWeapon) weapon).parent.enchantment).durability;
+		}
+
 		//average value of 5, or 20 hits to an explosion
 		int durToReduce = Math.round(Random.IntRange(0, 10) * procChanceMultiplier(attacker));
 		int currentDurability = durability;
@@ -77,9 +82,9 @@ public class Explosive extends Weapon.Enchantment {
 				explosionPos = defender.pos;
 			}
 
-			new Bomb.ConjuredBomb().explode(explosionPos);
+			new ExplosiveCurseBomb().explode(explosionPos);
 
-			durability = 100;
+			durability += 100;
 			Item.updateQuickslot();
 
 			if (weapon instanceof MissileWeapon){
@@ -91,15 +96,20 @@ public class Explosive extends Weapon.Enchantment {
 		if (weapon instanceof MissileWeapon
 				&& ((MissileWeapon)weapon).parent != null && ((MissileWeapon) weapon).parent.enchantment instanceof Explosive){
 			((Explosive) ((MissileWeapon) weapon).parent.enchantment).durability = durability;
+			durability = 100;
 		}
 
 		return damage;
 	}
 
 	public void merge(Explosive other){
-		if (other.durability < durability){
-			durability = other.durability;
-		}
+		int diff = 100 - other.durability;
+		durability -= diff;
+		//this can make durability negative, in which case many explosions can happen in succession.
+	}
+
+	public void clear(){
+		durability = 100;
 	}
 
 	@Override
@@ -136,15 +146,13 @@ public class Explosive extends Weapon.Enchantment {
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
 		durability = bundle.getInt(DURABILITY);
-		//pre-1.3 saves
-		if (durability <= 0){
-			durability = 100;
-		}
 	}
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		bundle.put(DURABILITY, durability);
 	}
+
+	public static class ExplosiveCurseBomb extends Bomb.ConjuredBomb {}
 
 }

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Sleep;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.SoulCollect;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.SoulMark;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.StimPack;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.SwarmIntelTracker;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vulnerable;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Warp;
@@ -90,6 +91,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.Saddle;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
@@ -111,6 +113,7 @@ import com.shatteredpixel.shatteredpixeldungeon.journal.Bestiary;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
+import com.shatteredpixel.shatteredpixeldungeon.levels.VaultLevel;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Chasm;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
@@ -119,10 +122,14 @@ import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
+import com.shatteredpixel.shatteredpixeldungeon.tiles.DungeonTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.noosa.tweeners.AlphaTweener;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.GameMath;
 import com.watabou.utils.PathFinder;
+import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
@@ -141,6 +148,7 @@ public abstract class Mob extends Char {
 
 	public AiState SLEEPING     = new Sleeping();
 	public AiState HUNTING		= new Hunting();
+	public AiState INVESTIGATING= new Investigating();
 	public AiState WANDERING	= new Wandering();
 	public AiState FLEEING		= new Fleeing();
 	public AiState PASSIVE		= new Passive();
@@ -184,6 +192,15 @@ public abstract class Mob extends Char {
 	private static final String USELESS_GLOWY   = "useless_glowy";
 	private static final String SCALE    = "scale_factor";
 
+
+	private static final String SWARM_TIME = "swarm_time";
+
+	//for stealth gameplay
+	private static final String USING_STEALTH = "using_stealth";
+	private static final String INVEST_TURNS = "invest_turns";
+	private static final String WANDER_POSITIONS = "wander_positions";
+	private static final String WANDER_POS_IDX = "wander_pos_idx";
+	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		
@@ -193,6 +210,8 @@ public abstract class Mob extends Char {
 			bundle.put( STATE, Sleeping.TAG );
 		} else if (state == WANDERING) {
 			bundle.put( STATE, Wandering.TAG );
+		} else if (state == INVESTIGATING) {
+			bundle.put( STATE, Investigating.TAG );
 		} else if (state == HUNTING) {
 			bundle.put( STATE, Hunting.TAG );
 		} else if (state == FLEEING) {
@@ -211,6 +230,17 @@ public abstract class Mob extends Char {
 
 		if (uselessGlowy != null)
 			bundle.put( USELESS_GLOWY, uselessGlowy.color);
+
+		bundle.put(SWARM_TIME, timeSeenAt);
+
+		bundle.put( USING_STEALTH, usingStealthGamePlay );
+		if (usingStealthGamePlay){
+			bundle.put(INVEST_TURNS, investigatingTurns);
+			if (wanderPositions != null) {
+				bundle.put(WANDER_POSITIONS, wanderPositions);
+				bundle.put(WANDER_POS_IDX, wanderPosIdx);
+			}
+		}
 	}
 	
 	@Override
@@ -218,11 +248,23 @@ public abstract class Mob extends Char {
 		
 		super.restoreFromBundle( bundle );
 
+		if (bundle.getBoolean(USING_STEALTH)) {
+			activateSteathGameplayBehaviour();
+
+			investigatingTurns = bundle.getInt(INVEST_TURNS);
+			if (bundle.contains(WANDER_POSITIONS)) {
+				wanderPositions = bundle.getIntArray(WANDER_POSITIONS);
+				wanderPosIdx = bundle.getInt(WANDER_POS_IDX);
+			}
+		}
+
 		String state = bundle.getString( STATE );
 		if (state.equals( Sleeping.TAG )) {
 			this.state = SLEEPING;
 		} else if (state.equals( Wandering.TAG )) {
 			this.state = WANDERING;
+		} else if (state.equals( Investigating.TAG )) {
+			this.state = INVESTIGATING;
 		} else if (state.equals( Hunting.TAG )) {
 			this.state = HUNTING;
 		} else if (state.equals( Fleeing.TAG )) {
@@ -242,6 +284,8 @@ public abstract class Mob extends Char {
 		if (bundle.contains(ENEMY_ID)) {
 			enemyID = bundle.getInt(ENEMY_ID);
 		}
+
+		timeSeenAt = bundle.getFloat( SWARM_TIME );
 
 		//no need to actually save this, must be false
 		firstAdded = false;
@@ -286,10 +330,12 @@ public abstract class Mob extends Char {
 		} else {
 			sprite.hideAlert();
 			sprite.hideLost();
+			sprite.hideInvestigate();
 		}
 		
 		if (paralysed > 0) {
 			enemySeen = false;
+			processSwarmIntel(false);
 			spend( TICK );
 			return true;
 		}
@@ -309,7 +355,11 @@ public abstract class Mob extends Char {
 			return true;
 		}
 
+		AiState curState = state;
 		boolean result = state.act( enemyInFOV, justAlerted );
+
+		//if we just swapped into hunting, this gets processed again
+		processSwarmIntel(enemyInFOV && state == curState);
 
 		//for updating hero FOV
 		if (buff(PowerOfMany.PowerBuff.class) != null){
@@ -319,7 +369,46 @@ public abstract class Mob extends Char {
 
 		return result;
 	}
-	
+
+	private float timeSeenAt = Float.MAX_VALUE;
+
+	protected void processSwarmIntel( boolean enemyInFOV ){
+		if (alignment == Alignment.ENEMY && state == HUNTING
+				&& Dungeon.isChallenged(Challenges.SWARM_INTELLIGENCE)
+				&& enemyInFOV && enemy != null && enemy.alignment == Alignment.ALLY) {
+
+			if (timeSeenAt >= now()){
+				timeSeenAt = now()-1; //starts at 2
+			}
+
+			int range = swarmAlertRange();
+			for (Mob mob : Dungeon.level.mobs) {
+				if (mob.alignment == Alignment.ENEMY
+						&& mob.paralysed <= 0
+						&& Dungeon.level.distance(pos, mob.pos) <= range
+						&& mob.state != mob.HUNTING) {
+					mob.beckon(	enemy.pos);
+				}
+			}
+			Buff.affect( Dungeon.hero, SwarmIntelTracker.class );
+		} else {
+			timeSeenAt = Float.MAX_VALUE;
+		}
+	}
+
+	public int swarmAlertRange(){
+		int range = 2*(int)Math.max(now() - timeSeenAt, 0);
+		return (int)GameMath.gate(0, range, 12);
+	}
+
+	@Override
+	public void fixTime(float decrement) {
+		if (swarmAlertRange() > 0){
+			timeSeenAt -= decrement;
+		}
+		super.fixTime(decrement);
+	}
+
 	//FIXME this is sort of a band-aid correction for allies needing more intelligent behaviour
 	protected boolean intelligentAlly = false;
 	
@@ -559,7 +648,7 @@ public abstract class Mob extends Char {
 
 	protected boolean getCloser( int target ) {
 		
-		if (rooted || target == pos) {
+		if (rooted || target == pos || !Dungeon.level.insideMap(target)) {
 			return false;
 		}
 
@@ -657,7 +746,7 @@ public abstract class Mob extends Char {
 			if (newPath) {
 				//If we aren't hunting, always take a full path
 				PathFinder.Path full = Dungeon.findPath(this, target, Dungeon.level.passable, fieldOfView, true);
-				if (state != HUNTING){
+				if (state != HUNTING && state != INVESTIGATING){
 					path = full;
 				} else {
 					//otherwise, check if other characters are forcing us to take a very slow route
@@ -700,6 +789,59 @@ public abstract class Mob extends Char {
 			return true;
 		} else {
 			return false;
+		}
+	}
+
+	CharSprite movementShadow;
+	AlphaTweener shadowFade;
+
+	@Override
+	public void move(int step, boolean travelling) {
+		int from = pos;
+		super.move(step, travelling);
+		if (usingStealthGamePlay
+				&& travelling
+				&& sprite != null
+				&& !sprite.visible
+				&& Dungeon.level.distance(pos, Dungeon.hero.pos) <= 6){
+			if (!Dungeon.level.visited[pos] && !Dungeon.level.mapped[pos]){
+				//also reveal this cell in the fog of war if it's within a 6 tile path
+				PathFinder.buildDistanceMap(Dungeon.hero.pos, Dungeon.level.passable, 6);
+				if (PathFinder.distance[pos] != Integer.MAX_VALUE) {
+					Dungeon.level.visited[pos] = true;
+					GameScene.updateFog(pos, 1);
+				}
+			}
+			//if we don't have a shadow, or it was removed from the scene (e.g. from scene reset)
+			if (movementShadow == null || movementShadow.parent == null){
+				movementShadow = sprite();
+				sprite.parent.add(movementShadow);
+			}
+			movementShadow.point(DungeonTilemap.raisedTileCenterToWorld(from));
+			movementShadow.x -= movementShadow.width()/2f;
+			movementShadow.y -= movementShadow.height()/2f;
+			movementShadow.move(from, pos);
+			movementShadow.alpha(sprite.alpha());
+			if (shadowFade == null){
+				shadowFade = new AlphaTweener( movementShadow, 0, 1 ) {
+					@Override
+					protected void updateValues(float progress) {
+						if (sprite.visible){
+							elapsed = progress = 1;
+						}
+						progress = (float)Math.pow(progress, 2); //alpha fades slowly then quickly
+						super.updateValues(progress);
+					}
+
+					@Override
+					protected void onComplete() {
+						shadowFade = null;
+					}
+				};
+				sprite.parent.add(shadowFade);
+			} else {
+				shadowFade.elapsed = 0;
+			}
 		}
 	}
 
@@ -1004,6 +1146,17 @@ public abstract class Mob extends Char {
 						hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(exp), FloatingText.EXPERIENCE);;
 				}
 				Dungeon.hero.earnExp(exp, getClass());
+				//in the vault level we manually progress ring IDing. 5 enemies defeated to an ID
+				if (exp == 0 && Dungeon.level instanceof VaultLevel){
+					Item ring = Dungeon.hero.belongings.ring();
+					if (ring != null){
+						ring.onHeroGainExp(0.2f, Dungeon.hero);
+					}
+					Item misc = Dungeon.hero.belongings.misc();
+					if (misc instanceof Ring){
+						misc.onHeroGainExp(0.2f, Dungeon.hero);
+					}
+				}
 
 				if (Dungeon.hero.subClass.is(HeroSubClass.MONK)){
 					Buff.affect(Dungeon.hero, MonkEnergy.class).gainEnergy(this);
@@ -1329,29 +1482,31 @@ public abstract class Mob extends Char {
 			//can be awoken by the least stealthy hostile present, not necessarily just our target
 			if (enemyInFOV || (enemy != null && enemy.invisible > 0)) {
 
-				float closestHostileDist = Float.POSITIVE_INFINITY;
+				float highestChance = Float.POSITIVE_INFINITY;
+				Char closestHostile = null;
 
 				for (Char ch : Actor.chars()){
 					if (canSee(ch.pos) && ch.invisible == 0 && ch.alignment != alignment && ch.alignment != Alignment.NEUTRAL){
-						float chDist = ch.stealth() + distance(ch);
+						float bestChance = detectionChance(ch);
 						//silent steps rogue talent, which also applies to rogue's shadow clone
 						if ((ch instanceof Hero || ch instanceof ShadowClone.ShadowAlly)
 								&& Dungeon.hero.hasTalent(Talent.SILENT_STEPS, Talent.PURSUIT)){
 							if (distance(ch) >= 4 - Dungeon.hero.pointsInTalent(Talent.SILENT_STEPS, Talent.PURSUIT)) {
-								chDist = Float.POSITIVE_INFINITY;
+								bestChance = Float.POSITIVE_INFINITY;
 							}
 						}
 						//flying characters are naturally stealthy
 						if (ch.flying && distance(ch) >= 2){
-							chDist = Float.POSITIVE_INFINITY;
+							bestChance = Float.POSITIVE_INFINITY;
 						}
-						if (chDist < closestHostileDist){
-							closestHostileDist = chDist;
+						if (bestChance < highestChance){
+							highestChance = bestChance;
+							closestHostile = ch;
 						}
 					}
 				}
 
-				if (Random.Float( closestHostileDist ) < 1) {
+				if (closestHostile != null && Random.Float() < detectionChance(closestHostile)) {
 					awaken(enemyInFOV);
 					if (state == SLEEPING){
 						spend(TICK); //wait if we can't wake up for some reason
@@ -1367,6 +1522,11 @@ public abstract class Mob extends Char {
 			return true;
 		}
 
+		//chance is 1 in (distance + stealth)
+		protected float detectionChance( Char enemy ){
+			return 1 / (distance( enemy ) + enemy.stealth());
+		}
+
 		protected void awaken( boolean enemyInFOV ){
 			if (enemyInFOV) {
 				enemySeen = true;
@@ -1379,15 +1539,6 @@ public abstract class Mob extends Char {
 				target = Dungeon.level.randomDestination( Mob.this );
 			}
 
-			if (alignment == Alignment.ENEMY && Dungeon.isChallenged(Challenges.SWARM_INTELLIGENCE)) {
-				for (Mob mob : Dungeon.level.mobs) {
-					if (mob.paralysed <= 0
-							&& Dungeon.level.distance(pos, mob.pos) <= 8
-							&& mob.state != mob.HUNTING) {
-						mob.beckon(target);
-					}
-				}
-			}
 			spend(TIME_TO_WAKE_UP);
 		}
 	}
@@ -1398,7 +1549,7 @@ public abstract class Mob extends Char {
 
 		@Override
 		public boolean act( boolean enemyInFOV, boolean justAlerted ) {
-			if (enemyInFOV && (justAlerted || Random.Float( distance( enemy ) / 2f + enemy.stealth() ) < 1)) {
+			if (enemyInFOV && (justAlerted || Random.Float() < detectionChance(enemy))) {
 
 				return noticeEnemy();
 
@@ -1408,7 +1559,12 @@ public abstract class Mob extends Char {
 
 			}
 		}
-		
+
+		//chance is 1 in (distance/2 + stealth)
+		protected float detectionChance( Char enemy ){
+			return 1 / (distance( enemy ) / 2f + enemy.stealth());
+		}
+
 		protected boolean noticeEnemy(){
 			enemySeen = true;
 			
@@ -1416,16 +1572,6 @@ public abstract class Mob extends Char {
 			alerted = true;
 			state = HUNTING;
 			target = enemy.pos;
-			
-			if (alignment == Alignment.ENEMY && Dungeon.isChallenged( Challenges.SWARM_INTELLIGENCE )) {
-				for (Mob mob : Dungeon.level.mobs) {
-					if (mob.paralysed <= 0
-							&& Dungeon.level.distance(pos, mob.pos) <= 8
-							&& mob.state != mob.HUNTING) {
-						mob.beckon( target );
-					}
-				}
-			}
 			
 			return true;
 		}
@@ -1458,9 +1604,6 @@ public abstract class Mob extends Char {
 
 		public static final String TAG	= "HUNTING";
 
-		//prevents rare infinite loop cases
-		protected boolean recursing = false;
-
 		@Override
 		public boolean act( boolean enemyInFOV, boolean justAlerted ) {
 			enemySeen = enemyInFOV;
@@ -1474,22 +1617,8 @@ public abstract class Mob extends Char {
 
 				//if we cannot attack our target, but were hit by something else that
 				// is visible and attackable or closer, swap targets
-				if (!recentlyAttackedBy.isEmpty()){
-					boolean swapped = false;
-					for (Char ch : recentlyAttackedBy){
-						if (ch != null && ch.isActive() && Actor.chars().contains(ch) && alignment != ch.alignment && canSee(ch.pos) && ch.invisible == 0 && !isCharmedBy(ch)) {
-							if (canAttack(ch) || enemy == null || Dungeon.level.distance(pos, ch.pos) < Dungeon.level.distance(pos, enemy.pos)) {
-								enemy = ch;
-								target = ch.pos;
-								enemyInFOV = true;
-								swapped = true;
-							}
-						}
-					}
-					recentlyAttackedBy.clear();
-					if (swapped){
-						return act( enemyInFOV, justAlerted );
-					}
+				if (handleRecentAttackers()){
+					return act( true, justAlerted );
 				}
 
 				if (enemyInFOV) {
@@ -1510,30 +1639,81 @@ public abstract class Mob extends Char {
 
 				} else {
 
-					//if moving towards an enemy isn't possible, try to switch targets to another enemy that is closer
-					//unless we have already done that and still can't move toward them, then move on.
-					if (!recursing) {
-						Char oldEnemy = enemy;
-						enemy = null;
-						enemy = chooseEnemy();
-						if (enemy != null && enemy != oldEnemy) {
-							recursing = true;
-							boolean result = act(enemyInFOV, justAlerted);
-							recursing = false;
-							return result;
-						}
-					}
-
-					spend( TICK );
-					if (!enemyInFOV) {
-						sprite.showLost();
-						state = WANDERING;
-						target = ((Mob.Wandering)WANDERING).randomDestination();
-					}
-					return true;
+					return handleUnreachableTarget(enemyInFOV, justAlerted);
 				}
 			}
 		}
+
+		protected boolean handleRecentAttackers(){
+			boolean swapped = false;
+			if (!recentlyAttackedBy.isEmpty()){
+				for (Char ch : recentlyAttackedBy){
+					if (ch != null && ch.isActive() && Actor.chars().contains(ch) && alignment != ch.alignment && canSee(ch.pos) && ch.invisible == 0 && !isCharmedBy(ch)) {
+						if (canAttack(ch) || enemy == null || Dungeon.level.distance(pos, ch.pos) < Dungeon.level.distance(pos, enemy.pos)) {
+							enemy = ch;
+							target = ch.pos;
+							swapped = true;
+						}
+					}
+				}
+				recentlyAttackedBy.clear();
+			}
+			return swapped;
+		}
+
+		//prevents rare infinite loop cases
+		protected boolean recursing = false;
+
+		//Try to switch targets to another enemy that is closer or reachable
+		//unless we have already done that and still can't move toward them, then move on.
+		protected boolean handleUnreachableTarget(boolean enemyInFOV, boolean justAlerted){
+			if (!recursing) {
+				Char oldEnemy = enemy;
+				enemy = null;
+				enemy = chooseEnemy();
+				if (enemy != null && enemy != oldEnemy) {
+					recursing = true;
+					boolean result = act(enemyInFOV, justAlerted);
+					recursing = false;
+					return result;
+				}
+			}
+
+			spend( TICK );
+			if (!enemyInFOV) {
+				sprite.showLost();
+				state = WANDERING;
+				target = ((Mob.Wandering)WANDERING).randomDestination();
+			}
+			return true;
+		}
+	}
+
+	//essentially a more aggressive version of wandering, where target pos is updated like hunting.
+	//not currently used directly by mobs outside of the vault, which also add more behaviour here
+	protected class Investigating extends Wandering {
+
+		public static final String TAG	= "INVESTIGATING";
+
+		@Override
+		public boolean act(boolean enemyInFOV, boolean justAlerted) {
+			if (enemyInFOV){
+				target = enemy.pos;
+			} else {
+				//we lose our target BEFORE reaching their last known position
+				if (Dungeon.level.distance(pos, target) <= 1){
+					sprite.showLost();
+					state = WANDERING;
+					target = ((Mob.Wandering)WANDERING).randomDestination();
+					spend( TICK );
+					return true;
+				}
+			}
+			return super.act(enemyInFOV, justAlerted);
+		}
+
+		//same detection chance as wandering
+
 	}
 
 	protected class Fleeing implements AiState {
@@ -1599,7 +1779,185 @@ public abstract class Mob extends Char {
 			return true;
 		}
 	}
-	
+
+
+	// *** Alternative investigating, wandering, and sleeping behaviour for stealth gameplay ***
+	// Currently exclusively used in the dwarven vault
+
+	//swaps AI logic for stealth gameplay.
+	// This is persisted over save/load, mobs with custom AI logic may need to override this
+	public void activateSteathGameplayBehaviour(){
+		if (!usingStealthGamePlay) {
+			usingStealthGamePlay = true;
+			AiState oldInvestigate = INVESTIGATING;
+			INVESTIGATING = new StealthGameplayInvestigating();
+			if (state == oldInvestigate) {
+				state = INVESTIGATING;
+			}
+
+			AiState oldWander = WANDERING;
+			WANDERING = new StealthGameplayWandering();
+			if (state == oldWander) {
+				state = WANDERING;
+			}
+
+			AiState oldSleep = SLEEPING;
+			SLEEPING = new StealthGameplaySleeping();
+			if (state == oldSleep){
+				state = SLEEPING;
+			}
+		}
+	}
+
+	private boolean usingStealthGamePlay;
+
+	//detection chance is lower on the first turn of investigating
+	private int investigatingTurns;
+
+	protected class StealthGameplayInvestigating extends Investigating {
+
+		@Override
+		public boolean act(boolean enemyInFOV, boolean justAlerted) {
+			if (enemyInFOV){
+				investigatingTurns++;
+			} else {
+				investigatingTurns = 0;
+			}
+			return super.act(enemyInFOV, justAlerted);
+		}
+
+		@Override
+		//chance is 1 in (distance/2 + stealth) at base (classic wandering), but reduced if enemy was only just seen
+		protected float detectionChance( Char enemy ){
+			float chance = 1 / (distance( enemy ) / 2f + enemy.stealth());
+			if (investigatingTurns == 1 && chance <= 1){
+				chance -= 0.33f;
+			}
+			return chance;
+		}
+	}
+
+	public void setupStealthGameplayWanderPositions(int[] wanderPositions, int startingIdx){
+		this.wanderPositions = wanderPositions;
+		wanderPosIdx = startingIdx;
+	}
+
+	//in stealth gameplay mobs wander to more consistent pre-determined locations
+	private int wanderPosIdx = 0;
+	private int[] wanderPositions;
+
+	protected class StealthGameplayWandering extends Wandering {
+
+		@Override
+		public boolean act(boolean enemyInFOV, boolean justAlerted) {
+			return super.act(enemyInFOV, justAlerted);
+		}
+
+		@Override
+		protected float detectionChance( Char enemy ){
+			//defaults to 1 in (distance + stealth) (classic sleeping detection)
+			if (!Dungeon.level.adjacent(pos, previousPos)){
+				return 1 / (distance( enemy ) + enemy.stealth());
+			}
+
+			float movementDir = PointF.angle(Dungeon.level.cellToPoint(previousPos), Dungeon.level.cellToPoint(pos))/PointF.G2R;;
+			float enemyDir = PointF.angle(Dungeon.level.cellToPoint(pos), Dungeon.level.cellToPoint(enemy.pos))/PointF.G2R;
+			//classic wandering detection if enemy is touching a 75 degree cone of vision and within 6 tiles
+			if (Math.abs(enemyDir - movementDir) <= 37.5f && Dungeon.level.distance(pos, enemy.pos) <= 6){
+				return 1 / (distance( enemy ) / 2f + enemy.stealth());
+			//classic sleeping (i.e. default) detection if enemy is touching a 150 degree vision cone
+			} else if (Math.abs(enemyDir - movementDir) <= 75f){
+				return 1 / (distance( enemy ) + enemy.stealth());
+			//otherwise uses very low chance detection (1/8 at 2 tiles, 0% at 3+)
+			} else {
+				float chance = 1 / (float)Math.pow((distance( enemy ) + enemy.stealth()), 3);
+				if (chance < 0.1f){
+					return 0;
+				} else {
+					return chance;
+				}
+			}
+		}
+
+		@Override
+		protected boolean noticeEnemy() {
+			super.noticeEnemy();
+			alerted = false;
+			state = INVESTIGATING;
+			investigatingTurns = 0;
+			sprite.showInvestigate();
+			spend(TICK);
+			//hero must know if they are detected
+			if (!Dungeon.level.heroFOV[pos]){
+				Buff.affect(Dungeon.hero, TalismanOfForesight.CharAwareness.class, 1f).charID = id();
+			}
+			return true;
+		}
+
+		@Override
+		protected int randomDestination() {
+			//stay still by default if given no other wandering behaviour
+			if (wanderPositions == null){
+				wanderPositions = new int[1];
+				wanderPositions[0] = pos;
+			}
+
+			int wanderPos = wanderPositions[wanderPosIdx];
+			if (wanderPos == pos) {
+				if (wanderPositions.length > 1) {
+					wanderPosIdx++;
+					if (wanderPosIdx == wanderPositions.length) {
+						wanderPosIdx = 0;
+					}
+					wanderPos = wanderPositions[wanderPosIdx];
+				} else {
+					//reset this, representing the mob looking around in place
+					previousPos = pos;
+					sprite.idle();
+				}
+			}
+			return wanderPos;
+		}
+	}
+
+	protected class StealthGameplaySleeping extends Sleeping {
+
+		@Override
+		public boolean act(boolean enemyInFOV, boolean justAlerted) {
+			//stay still by default if given no other wandering behaviour
+			if (wanderPositions == null){
+				wanderPositions = new int[1];
+				wanderPositions[0] = pos;
+			}
+			return super.act(enemyInFOV, justAlerted);
+		}
+
+		protected void awaken(boolean enemyInFOV) {
+			super.awaken(enemyInFOV);
+			if (state == HUNTING){
+				alerted = false;
+				state = INVESTIGATING;
+				investigatingTurns = 0;
+				sprite.showInvestigate();
+				//hero must know if they are detected
+				if (!Dungeon.level.heroFOV[pos]){
+					Buff.affect(Dungeon.hero, TalismanOfForesight.CharAwareness.class, 1f).charID = id();
+				}
+			}
+		}
+
+		//chance is 1 in (distance + stealth)^2
+		//set to 0 if below 10% (usually happens at 4+ distance)
+		@Override
+		protected float detectionChance( Char enemy ){
+			float chance = 1 / (float)Math.pow((distance( enemy ) + enemy.stealth()), 2);
+			if (chance < 0.1f){
+				return 0;
+			} else {
+				return chance;
+			}
+		}
+	}
 	
 	private static ArrayList<Mob> heldAllies = new ArrayList<>();
 

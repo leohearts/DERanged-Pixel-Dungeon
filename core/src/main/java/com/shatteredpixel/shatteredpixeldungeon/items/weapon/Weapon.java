@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,13 +60,16 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Displacing;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Explosive;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Friendly;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Polarized;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Pressurized;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Sacrificial;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Wayward;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Wondrous;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Blazing;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Blocking;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Blooming;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Chilling;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Corrupting;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Crystal;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Elastic;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Eldritch;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Grim;
@@ -122,6 +125,10 @@ abstract public class Weapon extends KindOfWeapon {
 			return Math.round(dmg * damageFactor);
 		}
 
+		public float damageFactor(float dmg){
+			return dmg * damageFactor;
+		}
+
 		public float delayFactor(float dly){
 			return dly * delayFactor;
 		}
@@ -143,8 +150,6 @@ abstract public class Weapon extends KindOfWeapon {
 	@Override
 	public int proc( Char attacker, Char defender, int damage ) {
 
-		boolean becameAlly = false;
-		boolean wasAlly = defender.alignment == Char.Alignment.ALLY;
 		if (attacker.buff(MagicImmune.class) == null) {
 			Enchantment trinityEnchant = null;
 			//only when it's the hero or a char that uses the hero's weapon
@@ -161,14 +166,11 @@ abstract public class Weapon extends KindOfWeapon {
 				if (enchantment != null &&
 						(((Hero) attacker).subClass.is(HeroSubClass.PALADIN) || hasCurseEnchant())){
 					damage = enchantment.proc(this, attacker, defender, damage);
-					if (defender.alignment == Char.Alignment.ALLY && !wasAlly){
-						becameAlly = true;
-					}
 				}
-				if (defender.isAlive() && !becameAlly && trinityEnchant != null){
+				if (defender.isAlive() && trinityEnchant != null){
 					damage = trinityEnchant.proc(this, attacker, defender, damage);
 				}
-				if (defender.isAlive() && !becameAlly) {
+				if (defender.isAlive()) {
 					int dmg = ((Hero) attacker).subClass.is(HeroSubClass.PALADIN) ? 6 : 2;
 					defender.damage(Math.round(dmg * Enchantment.genericProcChanceMultiplier(attacker)), HolyWeapon.INSTANCE);
 				}
@@ -176,18 +178,15 @@ abstract public class Weapon extends KindOfWeapon {
 			} else {
 				if (enchantment != null) {
 					damage = enchantment.proc(this, attacker, defender, damage);
-					if (defender.alignment == Char.Alignment.ALLY && !wasAlly) {
-						becameAlly = true;
-					}
 				}
 
-				if (defender.isAlive() && !becameAlly && trinityEnchant != null){
+				if (defender.isAlive() && trinityEnchant != null){
 					damage = trinityEnchant.proc(this, attacker, defender, damage);
 				}
 			}
 
 			if (attacker instanceof Hero && isEquipped((Hero) attacker) &&
-					attacker.buff(Smite.SmiteTracker.class) != null && !becameAlly){
+					attacker.buff(Smite.SmiteTracker.class) != null && defender.isAlive()){
 				defender.damage(Smite.bonusDmg((Hero) attacker, defender), Smite.INSTANCE);
 			}
 		}
@@ -466,6 +465,11 @@ abstract public class Weapon extends KindOfWeapon {
 			} else if (level() >= 4 && Random.Float(10) < Math.pow(2, level()-4)){
 				enchant(null);
 			}
+
+			//if we still have a crystal enchant, repair it (just like thrown weapon repair)
+			if (enchantment instanceof Crystal){
+				((Crystal) enchantment).repair(this, false, 100);
+			}
 		}
 		
 		cursed = false;
@@ -585,26 +589,28 @@ abstract public class Weapon extends KindOfWeapon {
 	public static abstract class Enchantment implements Bundlable {
 		//TODO : 신규 인챈트 추가할 때 격투가 신비한 반지 특성 효과도 추가할 것
 		public static final Class<?>[] common = new Class<?>[]{
-				Blazing.class, Chilling.class, Kinetic.class, Shocking.class, Venomous.class, Eldritch.class};
+				Blazing.class, Chilling.class, Kinetic.class, Shocking.class, Venomous.class
+		};
 
 		public static final Class<?>[] uncommon = new Class<?>[]{
-				Blocking.class, Blooming.class, Elastic.class,
-				Lucky.class, Projecting.class, Unstable.class};
+				Blocking.class, Blooming.class, Eldritch.class, Elastic.class,
+				Lucky.class, Projecting.class, Unstable.class, Vorpal.class
+		};
 
 		public static final Class<?>[] rare = new Class<?>[]{
-				Corrupting.class, Grim.class, Vampiric.class, Stunning.class, Vorpal.class};
+				Corrupting.class, Crystal.class, Grim.class, Vampiric.class, Stunning.class
+		};
 
 		public static final float[] typeChances = new float[]{
-				50, //12.5% each
-				40, //6.67% each
-				10  //3.33% each
+				50, //10% each
+				40, //5%  each
+				10  //2.5% each
 		};
 
 		public static final Class<?>[] curses = new Class<?>[]{
-				Annoying.class, Displacing.class, Dazzling.class, Explosive.class,
-				Sacrificial.class, Wayward.class, Polarized.class, Friendly.class
+				Annoying.class, Displacing.class, Dazzling.class, Explosive.class, Friendly.class,
+				Polarized.class, Pressurized.class, Sacrificial.class, Wayward.class, Wondrous.class
 		};
-		
 			
 		public abstract int proc( Weapon weapon, Char attacker, Char defender, int damage );
 

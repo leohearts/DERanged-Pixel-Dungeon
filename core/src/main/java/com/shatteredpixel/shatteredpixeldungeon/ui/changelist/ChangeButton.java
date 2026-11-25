@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,10 @@ public class ChangeButton extends Component {
 	protected Image icon;
 	protected String title;
 	protected String[] messages;
+
+	public ChangeButton(ChangeIcons icon, String title, String... message){
+		this( icon.get(), title, message );
+	}
 
 	public ChangeButton( Image icon, String title, String... messages){
 		super();

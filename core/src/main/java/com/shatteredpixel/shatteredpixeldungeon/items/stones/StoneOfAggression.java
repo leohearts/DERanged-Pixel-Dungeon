@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,12 +45,10 @@ public class StoneOfAggression extends Runestone {
 		
 		Char ch = Actor.findChar( cell );
 		
-		if (ch != null) {
-			if (Char.hasProp(ch, Char.Property.BOSS) || Char.hasProp(ch, Char.Property.MINIBOSS)) {
-				Buff.prolong(ch, Aggression.class, Aggression.DURATION / 4f);
-			} else {
-				Buff.prolong(ch, Aggression.class, Aggression.DURATION);
-			}
+		if (ch != null
+				&& !Char.hasProp(ch, Char.Property.BOSS)
+				&& !Char.hasProp(ch, Char.Property.MINIBOSS)) {
+			Buff.prolong(ch, Aggression.class, Aggression.DURATION);
 		}
 
 		CellEmitter.center(cell).start( Speck.factory( Speck.SCREAM ), 0.3f, 3 );
@@ -74,11 +72,7 @@ public class StoneOfAggression extends Runestone {
 
 		@Override
 		public float iconFadePercent() {
-			if (Char.hasProp(target, Char.Property.BOSS) || Char.hasProp(target, Char.Property.MINIBOSS)){
-				return Math.max(0, (DURATION/4f - visualcooldown()) / (DURATION/4f));
-			} else {
-				return Math.max(0, (DURATION - visualcooldown()) / DURATION);
-			}
+			return Math.max(0, (DURATION - visualcooldown()) / DURATION);
 		}
 
 		@Override

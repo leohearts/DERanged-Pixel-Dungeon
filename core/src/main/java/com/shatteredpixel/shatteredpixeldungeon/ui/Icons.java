@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,6 +66,7 @@ public enum Icons {
 	RIGHTARROW,
 	CALENDAR,
 	CHEVRON,
+	SHUFFLE,
 
 	//misc larger icons, mainly used for buttons, tabs, and journal, spacing for 16x16
 	TARGET,
@@ -114,6 +115,7 @@ public enum Icons {
 	MINI_INFO,
 	MINI_UNCHECKED,
 	MINI_CHECKED,
+	INVESTIGATE,
 	DEPTH,      //depth icons have three variants, for regular, seeded, daily, and daily replay runs
 	DEPTH_CHASM,
 	DEPTH_WATER,
@@ -137,11 +139,13 @@ public enum Icons {
 	LIBGDX,
 	ALEKS,
 	WATA,
+	PUMPKINVOLT,
 	CELESTI,
-	KRISTJAN,
+	LUMINE,
 	CUBE_CODE,
 	PURIGRO,
 	ARCNOR,
+	ALASTAIR,
 	DCINSIDE,
 	NOTHING,
 
@@ -248,6 +252,9 @@ public enum Icons {
 				break;
 			case CHEVRON:
 				icon.frame( icon.texture.uvRectBySize( 240, 16, 13, 10 ) );
+				break;
+			case SHUFFLE:
+				icon.frame(icon.texture.uvRectBySize( 240, 32, 15, 12 ) );
 				break;
 
 			case TARGET:
@@ -362,13 +369,16 @@ public enum Icons {
 				icon.frame( icon.texture.uvRectBySize( 0, 88, 7, 5 ) );
 				break;
 			case SLEEP:
-				icon.frame( icon.texture.uvRectBySize( 16, 80, 9, 8 ) );
+				icon.frame( icon.texture.uvRectBySize( 7, 88, 9, 8 ) );
 				break;
 			case ALERT:
-				icon.frame( icon.texture.uvRectBySize( 16, 88, 8, 8 ) );
+				icon.frame( icon.texture.uvRectBySize( 16, 80, 8, 8 ) );
 				break;
 			case LOST:
-				icon.frame( icon.texture.uvRectBySize( 24, 88, 8, 8 ) );
+				icon.frame( icon.texture.uvRectBySize( 24, 80, 8, 8 ) );
+				break;
+			case INVESTIGATE:
+				icon.frame( icon.texture.uvRectBySize( 16, 88, 8, 8 ) );
 				break;
 			case MINI_INFO:
 				icon.frame( icon.texture.uvRectBySize( 32, 144, 9, 9 ) );
@@ -443,6 +453,9 @@ public enum Icons {
 			case WATA:
 				icon.frame( icon.texture.uvRectBySize( 0, 112, 17, 12 ) );
 				break;
+			case PUMPKINVOLT:
+				icon.frame( icon.texture.uvRectBySize( 17, 112, 14, 15 ) );
+				break;
 			case BOBYLEV:
 				icon.frame( icon.texture.uvRectBySize( 112, 128, 30, 20 ) );
 				break;
@@ -455,7 +468,7 @@ public enum Icons {
 				icon.frame( icon.texture.uvRectBySize( 32, 96, 32, 32 ) );
 				icon.scale.set(PixelScene.align(0.49f));
 				break;
-			case KRISTJAN:
+			case LUMINE:
 				icon.frame( icon.texture.uvRectBySize( 64, 96, 32, 32 ) );
 				icon.scale.set(PixelScene.align(0.49f));
 				break;
@@ -469,6 +482,10 @@ public enum Icons {
 				break;
 			case CUBE_CODE:
 				icon.frame( icon.texture.uvRectBySize( 160, 96, 27, 30 ) );
+				icon.scale.set(PixelScene.align(0.49f));
+				break;
+			case ALASTAIR:
+				icon.frame( icon.texture.uvRectBySize( 192, 96, 32, 32 ) );
 				icon.scale.set(PixelScene.align(0.49f));
 				break;
 			case DCINSIDE:

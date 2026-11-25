@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.quest.vault.VaultBossElemental;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
 import com.shatteredpixel.shatteredpixeldungeon.items.bags.MagicalHolster;
@@ -48,6 +49,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.bow.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.curses.Explosive;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Crystal;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Projecting;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.gun.Gun;
@@ -260,7 +262,7 @@ abstract public class MissileWeapon extends Weapon {
 	protected float adjacentAccFactor(Char owner, Char target){
 		if (Dungeon.level.adjacent( owner.pos, target.pos )) {
 			if (owner instanceof Hero){
-				return (0.5f + 0.2f*((Hero) owner).pointsInTalent(Talent.POINT_BLANK, Talent.RK_SNIPER));
+				return (0.5f + 0.25f*((Hero) owner).pointsInTalent(Talent.POINT_BLANK, Talent.RK_SNIPER));
 			} else {
 				return 0.5f;
 			}
@@ -336,7 +338,12 @@ abstract public class MissileWeapon extends Weapon {
 		if (attacker == Dungeon.hero && Random.Int(3) < Dungeon.hero.pointsInTalent(Talent.SHARED_ENCHANTMENT, Talent.RK_SNIPER)){
 			SpiritBow bow = Dungeon.hero.belongings.getItem(SpiritBow.class);
 			if (bow != null && bow.enchantment != null && Dungeon.hero.buff(MagicImmune.class) == null) {
-				damage = bow.enchantment.proc(this, attacker, defender, damage);
+				if (bow.enchantment instanceof Crystal){
+					//crystal specifically needs to proc on the bow, but it's just based on dmg so it doesn't really matter
+					damage = bow.enchantment.proc(bow, attacker, defender, damage);
+				} else {
+					damage = bow.enchantment.proc(this, attacker, defender, damage);
+				}
 			}
 		}
 
@@ -366,10 +373,12 @@ abstract public class MissileWeapon extends Weapon {
 					parent.identify();
 				}
 			}
+		} else if (parent != null && isIdentified() && !parent.isIdentified()){
+			parent.identify();
 		}
 
-		if (!isIdentified() && ShardOfOblivion.passiveIDDisabled()){
-			Buff.prolong(curUser, ShardOfOblivion.ThrownUseTracker.class, 50f);
+		if (attacker == Dungeon.hero && !isIdentified() && ShardOfOblivion.passiveIDDisabled()){
+			Buff.prolong(Dungeon.hero, ShardOfOblivion.ThrownUseTracker.class, 50f);
 		}
 
         SharpShooterBuff.SharpShootingCoolDown.missileHit(attacker);
@@ -450,8 +459,10 @@ abstract public class MissileWeapon extends Weapon {
 	protected void rangedHit( Char enemy, int cell ){
 		decrementDurability();
 		if (durability > 0 && !spawnedForEffect){
+			//ALL projectiles stick to the vault boss elemental, as it has custom logic for it
+			boolean doesStick = sticky || enemy instanceof VaultBossElemental;
 			//attempt to stick the missile weapon to the enemy, just drop it if we can't.
-			if (sticky && enemy != null && enemy.isActive() && enemy.alignment != Char.Alignment.ALLY){
+			if (doesStick && enemy != null && enemy.isActive() && enemy.alignment != Char.Alignment.ALLY){
 				PinCushion p = Buff.affect(enemy, PinCushion.class);
 				if (p.target == enemy){
 					p.stick(this);
@@ -491,9 +502,9 @@ abstract public class MissileWeapon extends Weapon {
 	public float durabilityPerUse( int level ){
 		float usages = baseUses * (float)(Math.pow(1.5f, level));
 
-		//+33%/50% durability
+		//+50%/75% durability
 		if (Dungeon.hero != null && Dungeon.hero.hasTalent(Talent.DURABLE_PROJECTILES, Talent.PURSUIT)){
-			usages *= 1f + (1+Dungeon.hero.pointsInTalent(Talent.DURABLE_PROJECTILES, Talent.PURSUIT))/6f;
+			usages *= 1.25f + (0.25f*Dungeon.hero.pointsInTalent(Talent.DURABLE_PROJECTILES, Talent.PURSUIT));
 		}
 		if (holster) {
 			usages *= MagicalHolster.HOLSTER_DURABILITY_FACTOR;
@@ -502,7 +513,13 @@ abstract public class MissileWeapon extends Weapon {
 		//+50% durability on speed aug, -33% durability on damage aug
 		usages /= augment.delayFactor(1f);
 
-		if (Dungeon.hero != null) usages *= RingOfSharpshooting.durabilityMultiplier( Dungeon.hero );
+		if (Dungeon.hero != null) {
+			usages *= RingOfSharpshooting.durabilityMultiplier( Dungeon.hero );
+		}
+
+		if (enchantment instanceof Crystal){
+			usages = Math.min(usages/2f, 30); //cannot exceed 30 uses with crystal enchant
+		}
 
 		//at 100 uses, items just last forever.
 		if (usages >= 100f && !Dungeon.isSpecialSeedEnabled(DungeonSeed.SpecialSeed.HUNTRESS)) return 0;
@@ -516,7 +533,24 @@ abstract public class MissileWeapon extends Weapon {
 			return MAX_DURABILITY/usages;
 		}
 	}
-	
+
+	@Override
+	public Weapon enchant(Enchantment ench) {
+		if (ench instanceof Crystal){
+			((Crystal) ench).setThrownWep();
+			//start repairing if thrown wep was already damaged
+			if (durability < MAX_DURABILITY) {
+				Buff.affect(Dungeon.hero, Crystal.CrystalRepair.class);
+			}
+		}
+		if (ench == null){
+			Buff.affect(Dungeon.hero, UpgradedSetTracker.class).appliedEnchants.remove(setID);
+		} else {
+			Buff.affect(Dungeon.hero, UpgradedSetTracker.class).appliedEnchants.put(setID, ench.getClass());
+		}
+		return super.enchant(ench);
+	}
+
 	protected void decrementDurability(){
 		//if this weapon was thrown from a source stack, degrade that stack.
 		//unless a weapon is about to break, then break the one being thrown
@@ -555,7 +589,7 @@ abstract public class MissileWeapon extends Weapon {
 				damage += Hero.heroDamageIntRange( 0, exStr );
 			}
 			if (owner.buff(Momentum.class) != null && owner.buff(Momentum.class).freerunning()) {
-				damage = Math.round(damage * (1f + 0.1f * ((Hero) owner).pointsInTalent(Talent.PROJECTILE_MOMENTUM, Talent.RK_FREERUNNER)));
+				damage = Math.round(damage * (1f + 0.15f * ((Hero) owner).pointsInTalent(Talent.PROJECTILE_MOMENTUM, Talent.RK_FREERUNNER)));
 			}
 		}
 		
@@ -587,9 +621,13 @@ abstract public class MissileWeapon extends Weapon {
 				durability = MAX_DURABILITY;
 			}
 
-			masteryPotionBonus = masteryPotionBonus || ((MissileWeapon) other).masteryPotionBonus;
 			levelKnown = levelKnown || other.levelKnown;
 			cursedKnown = cursedKnown || other.cursedKnown;
+			if (((Weapon)other).readyToIdentify()){
+				setIDReady();
+			}
+
+			masteryPotionBonus = masteryPotionBonus || ((MissileWeapon) other).masteryPotionBonus;
 			enchantHardened = enchantHardened || ((MissileWeapon) other).enchantHardened;
 
 			//if other has a curse/enchant status that's a higher priority, copy it. in the following order:
@@ -631,6 +669,11 @@ abstract public class MissileWeapon extends Weapon {
 			m.durability = MAX_DURABILITY;
 			m.parent = this;
 			extraThrownLeft = m.extraThrownLeft = true;
+
+			//explosive durability is tracked only in the parent
+			if (m.enchantment instanceof Explosive){
+				((Explosive) m.enchantment).clear();
+			}
 		}
 		
 		return split;
@@ -641,12 +684,13 @@ abstract public class MissileWeapon extends Weapon {
 		parent = null;
 		if (!UpgradedSetTracker.pickupValid(hero, this)){
 			Sample.INSTANCE.play( Assets.Sounds.ITEM );
-			hero.spendAndNext( TIME_TO_PICK_UP );
+			hero.spendAndNext( pickupDelay() );
 			GLog.w(Messages.get(this, "dust"));
 			quantity(0);
 			return true;
 		} else {
 			extraThrownLeft = false;
+			UpgradedSetTracker.filterEnchantOnPickup(hero, this);
 			return super.doPickUp(hero, pos);
 		}
 	}
@@ -678,7 +722,7 @@ abstract public class MissileWeapon extends Weapon {
 		}
 
 		if (enchantment != null && (cursedKnown || !enchantment.curse())){
-			info += "\n\n" + Messages.get(Weapon.class, "enchanted", enchantment.name());
+			info += "\n\n" + Messages.capitalize(Messages.get(Weapon.class, "enchanted", enchantment.name()));
 			if (enchantHardened) info += " " + Messages.get(Weapon.class, "enchant_hardened");
 			info += " " + enchantment.desc();
 		} else if (enchantHardened){
@@ -692,7 +736,7 @@ abstract public class MissileWeapon extends Weapon {
 		}
 
 		info += "\n\n";
-		String statsInfo = Messages.get(this, "stats_desc");
+		String statsInfo = statsInfo();
 		if (!statsInfo.equals("")) info += statsInfo + " ";
 		info += Messages.get(MissileWeapon.class, "distance");
 
@@ -727,6 +771,10 @@ abstract public class MissileWeapon extends Weapon {
 		}
 
 		return info;
+	}
+
+	public String statsInfo(){
+		return Messages.get(this, "stats_desc");
 	}
 	
 	@Override
@@ -848,7 +896,12 @@ abstract public class MissileWeapon extends Weapon {
 	//also used by liquid metal crafting to track when a set is consumed
 	public static class UpgradedSetTracker extends Buff {
 
+		{
+			revivePersists = true;
+		}
+
 		public HashMap<Long, Integer> levelThresholds = new HashMap<>();
+		public HashMap<Long, Class<? extends Enchantment>> appliedEnchants = new HashMap<>();
 
 		public static boolean pickupValid(Hero h, MissileWeapon w){
 			if (h.buff(UpgradedSetTracker.class) != null){
@@ -861,8 +914,23 @@ abstract public class MissileWeapon extends Weapon {
 			return true;
 		}
 
+		//if a picked up thrown weapon has an enchant that doesn't match with the most recent application
+		// we cleanse it, to prevent exploits. Currently this assumes enchants are only ever cleared via upgrading
+		public static void filterEnchantOnPickup(Hero h, MissileWeapon w){
+			if (h.buff(UpgradedSetTracker.class) != null){
+				Class<? extends Enchantment> enchantCLS = h.buff(UpgradedSetTracker.class).appliedEnchants.get(w.setID);
+				if (enchantCLS != null && w.enchantment != null && w.enchantment.getClass() != enchantCLS){
+					w.enchantment = null;
+					w.curseInfusionBonus = false; //must be false as no enchantment
+				}
+			}
+		}
+
 		public static final String SET_IDS = "set_ids";
 		public static final String SET_LEVELS = "set_levels";
+
+		public static final String SET_IDS_ENCHANTS = "set_ids_enchants";
+		public static final String SET_ENCHANTS = "set_enchants";
 
 		@Override
 		public void storeInBundle(Bundle bundle) {
@@ -877,6 +945,17 @@ abstract public class MissileWeapon extends Weapon {
 			}
 			bundle.put(SET_IDS, IDs);
 			bundle.put(SET_LEVELS, levels);
+
+			IDs = new long[appliedEnchants.size()];
+			Class[] enchants = new Class[appliedEnchants.size()];
+			i = 0;
+			for (Long ID : appliedEnchants.keySet()){
+				IDs[i] = ID;
+				enchants[i] = appliedEnchants.get(ID);
+				i++;
+			}
+			bundle.put(SET_IDS_ENCHANTS, IDs);
+			bundle.put(SET_ENCHANTS, enchants);
 		}
 
 		@Override
@@ -885,9 +964,22 @@ abstract public class MissileWeapon extends Weapon {
 			long[] IDs = bundle.getLongArray(SET_IDS);
 			int[] levels = bundle.getIntArray(SET_LEVELS);
 			levelThresholds.clear();
-			for (int i = 0; i <IDs.length; i++){
+			for (int i = 0; i < IDs.length; i++){
 				levelThresholds.put(IDs[i], levels[i]);
 			}
+
+			// pre-v4.0.0 saves
+			if (!bundle.contains(SET_IDS_ENCHANTS)){
+				appliedEnchants = new HashMap<>();
+			} else {
+				IDs = bundle.getLongArray(SET_IDS_ENCHANTS);
+				Class[] enchants = bundle.getClassArray(SET_ENCHANTS);
+				appliedEnchants.clear();
+				for (int i = 0; i < IDs.length; i++){
+					appliedEnchants.put(IDs[i], enchants[i]);
+				}
+			}
+
 		}
 	}
 }

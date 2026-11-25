@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
-import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Regeneration;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
@@ -43,6 +42,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfLullaby;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfMagicMapping;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRage;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRetribution;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTerror;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTransmutation;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ExoticScroll;
@@ -153,6 +153,7 @@ public class UnstableSpellbook extends Artifact {
 				|| (scroll instanceof ScrollOfTransmutation));
 
 		scroll.anonymize();
+		scroll.talentChance = 0;  //spellbook does not trigger on-scroll talents
 		curItem = scroll;
 		curUser = hero;
 
@@ -176,14 +177,13 @@ public class UnstableSpellbook extends Artifact {
 						curItem = scroll;
 						charge--;
 						scroll.anonymize();
+						scroll.talentChance = 0;
 						checkForArtifactProc(curUser, scroll);
 						scroll.doRead();
-						Invisibility.dispel();
 						Talent.onArtifactUsed(Dungeon.hero);
 					} else {
 						checkForArtifactProc(curUser, fScroll);
 						fScroll.doRead();
-						Invisibility.dispel();
 						Talent.onArtifactUsed(Dungeon.hero);
 					}
 					updateQuickslot();
@@ -197,7 +197,6 @@ public class UnstableSpellbook extends Artifact {
 		} else {
 			checkForArtifactProc(curUser, scroll);
 			scroll.doRead();
-			Invisibility.dispel();
 			Talent.onArtifactUsed(Dungeon.hero);
 		}
 
@@ -207,7 +206,7 @@ public class UnstableSpellbook extends Artifact {
 	private void checkForArtifactProc(Hero user, Scroll scroll){
 		//if the base scroll (exotics all match) is an AOE effect, then also trigger illuminate
 		if (scroll instanceof ScrollOfLullaby
-				|| scroll instanceof ScrollOfRemoveCurse || scroll instanceof ScrollOfTerror) {
+				|| scroll instanceof ScrollOfRetribution || scroll instanceof ScrollOfTerror) {
 			for (Mob mob : Dungeon.level.mobs.toArray( new Mob[0] )) {
 				if (Dungeon.level.heroFOV[mob.pos]) {
 					artifactProc(mob, visiblyUpgraded(), 1);
@@ -232,11 +231,11 @@ public class UnstableSpellbook extends Artifact {
 			curUser = Dungeon.hero;
 			curItem = scroll;
 			scroll.anonymize();
+			scroll.talentChance = 0;
 			Game.runOnRenderThread(new Callback() {
 				@Override
 				public void call() {
 					scroll.doRead();
-					Invisibility.dispel();
 					Item.updateQuickslot();
 				}
 			});

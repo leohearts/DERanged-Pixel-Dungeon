@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,6 +70,9 @@ public abstract class Plant implements Bundlable {
 
 		if (ch instanceof Hero){
 			((Hero) ch).interrupt();
+			if(((Hero) ch).hasTalent(Talent.BARKSKIN, Talent.RK_WARDEN)){
+				Barkskin.conditionallyAppend(ch, (((Hero) ch).lvl* ((Hero) ch).pointsInTalent(Talent.BARKSKIN, Talent.RK_WARDEN))/3, 1 );
+			}
 		}
 
 		if (ch instanceof Mob && Dungeon.hero.hasTalent(Talent.WEAKENING_POISON, Talent.KINGS_WRATH)) {

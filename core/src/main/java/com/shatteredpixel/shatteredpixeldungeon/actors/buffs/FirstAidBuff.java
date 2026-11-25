@@ -82,8 +82,7 @@ public class FirstAidBuff extends Buff implements ActionIndicator.Action {
         if (hero.hasTalent(Talent.OINTMENT, Talent.RK_THERAPIST)) {
             float healPercent = 1f/(float)(1+hero.pointsInTalent(Talent.OINTMENT, Talent.RK_THERAPIST));
             Healing healing = Buff.affect(hero, Healing.class);
-            healing.setHeal(healAmt(), healPercent, 0);
-            healing.applyVialEffect();
+            healing.setHeal(healAmt(), healPercent, 0, true);
         } else {
             hero.heal(healAmt());
         }

@@ -521,7 +521,7 @@ public class Command extends Buff implements ActionIndicator.Action {
                 if (Dungeon.level.heroFOV[target]) {
                     Ballistica aim = new Ballistica(hero.pos, target, Ballistica.STOP_TARGET);
                     new Explosive().effect(null, hero, aim, false);
-                    hero.sprite.parent.add(new TargetedCell(target, 0xFF0000));
+                    GameScene.targetedCell(target, 0xFF0000, 1f);
 
                     hero.sprite.operate(hero.pos);
                     hero.spendAndNext(1f);

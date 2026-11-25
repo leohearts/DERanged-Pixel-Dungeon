@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CheckedCell;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.LeafParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfSharpshooting;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.DisposableMissileWeapon;
@@ -316,6 +317,16 @@ public class SpiritBow extends Weapon {
 		}
 
 		@Override
+		public ArrayList<String> actions(Hero hero) {
+			return new ArrayList<>();
+		}
+
+		@Override
+		public String defaultAction() {
+			return null;
+		}
+
+		@Override
 		public int defaultQuantity() {
 			return 1;
 		}
@@ -394,7 +405,7 @@ public class SpiritBow extends Weapon {
 				PathFinder.buildDistanceMap( cell, BArray.or(Dungeon.level.passable, Dungeon.level.avoid, null), Dungeon.hero.pointsInTalent(Talent.ATTRACTION, Talent.RK_WARDEN) );
 				for (int i = 0; i < PathFinder.distance.length; i++){
 					if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-						GameScene.effectOverFog( new CheckedCell( i, cell ) );
+						GameScene.checkedCell( i, cell );
 					}
 				}
 			}
@@ -407,6 +418,11 @@ public class SpiritBow extends Weapon {
 				}
 				if (sniperSpecial && SpiritBow.this.augment != Augment.SPEED) sniperSpecial = false;
 			}
+		}
+
+		@Override
+		public Item split(int amount) {
+			return null;
 		}
 
 		@Override

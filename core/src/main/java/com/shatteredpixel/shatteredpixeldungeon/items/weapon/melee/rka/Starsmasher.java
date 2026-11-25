@@ -117,7 +117,7 @@ public class Starsmasher extends MeleeWeapon implements AlchemyWeapon {
             if (enemy != null && new Ballistica( user.pos, enemy.pos, Ballistica.PROJECTILE ).collisionPos == enemy.pos) {
                 check = 0;
                 for (int i: PathFinder.NEIGHBOURS9){
-                    user.sprite.parent.add(new TargetedCell(enemy.pos + i, 0x66B3FF));
+                    GameScene.targetedCell(enemy.pos + i, 0x66B3FF, 1f);
                 }
                 Sample.INSTANCE.play( Assets.Sounds.EVOKE, 1f, 0.8f  );
                 ArrayList<Integer> lol = new ArrayList<>();
@@ -127,7 +127,7 @@ public class Starsmasher extends MeleeWeapon implements AlchemyWeapon {
                 for (int i: PathFinder.NEIGHBOURS9){
                     int c = enemy.pos + i;
                     if (c >= 0 && c < Dungeon.level.length()) {
-                        user.sprite.parent.add(new TargetedCell(c, 0xBAFFFF));
+                        GameScene.targetedCell(c, 0xBAFFFF, 1f);
                         MagicMissile missile = ((MagicMissile)enemy.sprite.parent.recycle( MagicMissile.class ));
                         PointF baseBeginning = DungeonTilemap.raisedTileCenterToWorld( c );
                         baseBeginning.offset(0f, -DungeonTilemap.SIZE*20f);
@@ -337,7 +337,7 @@ public class Starsmasher extends MeleeWeapon implements AlchemyWeapon {
         hero.busy();
         for (int i = 0; i < PathFinder.distance.length; i++) {
             if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-                hero.sprite.parent.add(new TargetedCell(i, 0xBAFFFF));
+                GameScene.targetedCell(i, 0xBAFFFF, 1f);
             }
         }
         Sample.INSTANCE.play(Assets.Sounds.MISS);
@@ -357,7 +357,7 @@ public class Starsmasher extends MeleeWeapon implements AlchemyWeapon {
                                 Invisibility.dispel();
                                 for (int i = 0; i < PathFinder.distance.length; i++) {
                                     if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-                                        hero.sprite.parent.add(new TargetedCell(i, 0xBAFFFF));
+                                        GameScene.targetedCell(i, 0xBAFFFF, 1f);
                                         Char targetCh = Actor.findChar(i);
                                         if (targetCh != null && targetCh.alignment != hero.alignment){
                                             int power = 16 - 4*Dungeon.level.distance(targetCh.pos, dest);

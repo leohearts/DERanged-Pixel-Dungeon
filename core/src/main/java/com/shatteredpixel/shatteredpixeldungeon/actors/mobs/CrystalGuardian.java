@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ public class CrystalGuardian extends Mob{
 			if (buff(PinCushion.class) != null){
 				buff(PinCushion.class).detach();
 			}
+			processSwarmIntel(false);
 			throwItems();
 			HP = Math.min(HT, HP+5);
 			if (Dungeon.level.heroFOV[pos]) {

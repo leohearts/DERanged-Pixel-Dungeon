@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,6 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PurpleParticle
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
-import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfAggression;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfDisintegration;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.DisintegrationTrap;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
@@ -203,15 +202,6 @@ public class Eye extends Mob {
 				int dmg = Random.NormalIntRange( 30, 50 );
 				dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
 
-				//logic for fists or Yog-Dzewa taking 1/2 or 1/4 damage from aggression stoned minions
-				if ( ch.buff(StoneOfAggression.Aggression.class) != null
-						&& ch.alignment == alignment
-						&& (Char.hasProp(ch, Property.BOSS) || Char.hasProp(ch, Property.MINIBOSS))){
-					dmg *= 0.5f;
-					if (ch instanceof YogDzewa){
-						dmg *= 0.5f;
-					}
-				}
 				if (ch.buff(WarriorParry.BlockTrock.class) != null){
 					ch.sprite.emitter().burst( Speck.factory( Speck.FORGE ), 15 );
 					SpellSprite.show(ch, SpellSprite.BLOCK, 2f, 2f, 2f);

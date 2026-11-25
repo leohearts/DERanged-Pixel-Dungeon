@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2019 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +21,12 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments;
 
+import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Bleeding;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
-import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
-import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
 
 public class Vorpal extends Weapon.Enchantment {
@@ -36,27 +35,39 @@ public class Vorpal extends Weapon.Enchantment {
 
 	@Override
 	public int proc(Weapon weapon, Char attacker, Char defender, int damage) {
-		int level = Math.max( 0, weapon.level() );
+		if (defender.isImmune(Bleeding.class)){
+			return damage;
+		}
 
-		// lvl 0 - 13%
-		// lvl 1 - 22%
-		// lvl 2 - 30%
-		float procChance;
-		procChance = (level+1f)/(level+8f) * procChanceMultiplier(attacker);
-
-		float powerMulti = Math.max(1f, procChance);
-
+		//flat 25% proc chance, effect scales with damage dealt
+		float procChance = 1/4f * procChanceMultiplier(attacker);
 		if (Random.Float() < procChance) {
-			Buff.affect(defender, Bleeding.class).set((damage/10f) * powerMulti);
-			Splash.at( defender.sprite.center(), -PointF.PI / 2, PointF.PI / 6, defender.sprite.blood(), 10 );
+
+			float powerMulti = Math.max(1f, procChance);
+
+			//we use a buff to track so we can know the final dmg
+			Buff.affect(attacker, VorpalTracker.class).powerMulti = powerMulti;
 		}
 
 		return damage;
+	}
+
+	public static class VorpalTracker extends Buff {
+		{
+			actPriority = Actor.VFX_PRIO;
+		}
+
+		public float powerMulti;
+
+		@Override
+		public boolean act() {
+			detach();
+			return true;
+		}
 	}
 
 	@Override
 	public ItemSprite.Glowing glowing() {
 		return RED;
 	}
-
 }

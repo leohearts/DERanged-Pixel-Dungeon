@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -243,7 +243,7 @@ public class MagesStaff extends MeleeWeapon {
 
 		int oldStaffcharges = this.wand != null ? this.wand.curCharges : 0;
 
-		if (owner == hero && hero.hasTalent(Talent.WAND_PRESERVATION, Talent.POWER_WITHIN)){
+		if (owner == hero && this.wand != null && hero.hasTalent(Talent.WAND_PRESERVATION, Talent.POWER_WITHIN)){
 			Talent.WandPreservationCounter counter = Buff.affect(hero, Talent.WandPreservationCounter.class);
 			if (counter.count() == 0){
 				counter.countUp(1);
@@ -452,51 +452,49 @@ public class MagesStaff extends MeleeWeapon {
 		public void onSelect( final Item item ) {
 			if (item != null) {
 
-				if (wand == null){
-					applyWand((Wand)item);
+				int newLevel;
+				int itemLevel = item.trueLevel();
+				if (itemLevel >= trueLevel()){
+					if (trueLevel() > 0)    newLevel = itemLevel + 1;
+					else                    newLevel = itemLevel;
 				} else {
-					int newLevel;
-					int itemLevel = item.trueLevel();
-					if (itemLevel >= trueLevel()){
-						if (trueLevel() > 0)    newLevel = itemLevel + 1;
-						else                    newLevel = itemLevel;
-					} else {
-						newLevel = trueLevel();
-					}
+					newLevel = trueLevel();
+				}
 
-					String bodyText = Messages.get(MagesStaff.class, "imbue_desc");
-					if (item.isIdentified()){
-						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_level", newLevel);
-					} else {
-						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_unknown", trueLevel());
-					}
+				String bodyText = Messages.get(MagesStaff.class, "imbue_desc");
+				if (item.isIdentified()){
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_level", newLevel);
+				} else {
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_unknown", trueLevel());
+				}
 
-					if (!item.cursedKnown || item.cursed){
-						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_cursed");
-					}
+				if (!item.cursedKnown || item.cursed){
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_cursed");
+				}
 
+				if (wand != null) {
 					if (hero.hasTalent(Talent.WAND_PRESERVATION, Talent.POWER_WITHIN)
-						&& hero.buff(Talent.WandPreservationCounter.class) == null){
+							&& hero.buff(Talent.WandPreservationCounter.class) == null) {
 						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_talent");
 					} else {
 						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_lost");
 					}
+				}
 
-					GameScene.show(
-							new WndOptions(new ItemSprite(item),
-									Messages.titleCase(item.name()),
-									bodyText,
-									Messages.get(MagesStaff.class, "yes"),
-									Messages.get(MagesStaff.class, "no")) {
-								@Override
-								protected void onSelect(int index) {
-									if (index == 0) {
-										applyWand((Wand)item);
-									}
+				GameScene.show(
+						new WndOptions(new ItemSprite(item),
+								Messages.titleCase(item.name()),
+								bodyText,
+								Messages.get(MagesStaff.class, "yes"),
+								Messages.get(MagesStaff.class, "no")) {
+							@Override
+							protected void onSelect(int index) {
+								if (index == 0) {
+									applyWand((Wand)item);
 								}
 							}
-					);
-				}
+						}
+				);
 			}
 		}
 

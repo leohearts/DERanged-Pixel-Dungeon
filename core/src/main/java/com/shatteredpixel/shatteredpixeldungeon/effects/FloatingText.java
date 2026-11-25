@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.MirrorImage;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.glyphs.Stone;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfAccuracy;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfEvasion;
@@ -187,8 +188,8 @@ public class FloatingText extends RenderedTextBlock {
 			} else {
 				icon.x = left() + width() - icon.width();
 			}
-			icon.y = top();
-			PixelScene.align(icon);
+			icon.x = PixelScene.align(Camera.main, icon.x);
+			icon.y = PixelScene.align(Camera.main, top());
 		}
 	}
 
@@ -316,7 +317,7 @@ public class FloatingText extends RenderedTextBlock {
 	public static int getHitReasonIcon(Char attacker, float accRoll, Char defender, float defRoll){
 		HashMap<Integer, Float> hitReasons = new HashMap<>();
 
-		//go through some garunteed hit interactions first
+		//go through some guaranteed hit interactions first
 		if (defRoll == 0 && defender.buff(GuidingLight.Illuminated.class) != null){
 			return HIT_BLS;
 		}
@@ -347,6 +348,11 @@ public class FloatingText extends RenderedTextBlock {
 		if (defender instanceof ArmoredStatue) arm = ((ArmoredStatue)defender).armor();
 		if (defender instanceof DriedRose.GhostHero) arm = ((DriedRose.GhostHero)defender).armor();
 
+		//one last check
+		if (defRoll == 0 && arm != null && arm.hasGlyph(Stone.class, defender)){
+			return HIT_ARM;
+		}
+
 		//accuracy boosts (always > 1)
 		if (wep != null && wep.accuracyFactor(attacker, defender) > 1){
 			hitReasons.put( HIT_WEP, wep.accuracyFactor(attacker, defender));
@@ -367,6 +373,9 @@ public class FloatingText extends RenderedTextBlock {
 		if (RingOfAccuracy.accuracyMultiplier(attacker) > 1)    hitReasons.put(HIT_ACC, RingOfAccuracy.accuracyMultiplier(attacker));
 		if (attacker.buff(Scimitar.SwordDance.class) != null)   hitReasons.put(HIT_DANCE, 1.5f);
 		if (!(wep instanceof MissileWeapon)) {
+			if (attacker instanceof Hero && ((Hero) attacker).hasTalent(Talent.PRECISE_ASSAULT) && ((Hero) attacker).heroClass != HeroClass.DUELIST){
+				hitReasons.put(HIT_PRES, 0.1f * Dungeon.hero.pointsInTalent(Talent.PRECISE_ASSAULT));
+			}
 			if (attacker.buff(Talent.PreciseAssaultTracker.class) != null){
 				hitReasons.put(HIT_PRES, Dungeon.hero.pointsInTalent(Talent.PRECISE_ASSAULT, Talent.RK_CHAMPION) == 2 ? 5f : 2f);
 			} else if (attacker.buff(Talent.LiquidAgilACCTracker.class) != null) {
@@ -391,7 +400,7 @@ public class FloatingText extends RenderedTextBlock {
 			Armor.testingNoArmDefSkill = false;
 			hitReasons.put(HIT_ARM, defender.defenseSkill(attacker)/(float)baseDef);
 		}
-		//hero specifically gets 1/2 eva when stunned, for mobs its a garunteed hit
+		//hero specifically gets 1/2 eva when stunned, for mobs its a guaranteed hit
 		if (defender.paralysed > 0)  {
 			if (defender instanceof Hero)   hitReasons.put(HIT_SUPR, 0.5f);
 			else                            return HIT_SUPR;

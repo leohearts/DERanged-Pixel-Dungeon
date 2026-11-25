@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -241,7 +241,7 @@ public class Blacksmith extends NPC {
 			completed	= false;
 
 			favor       = 0;
-			pickaxe     = new Pickaxe().identify();
+			pickaxe     = new Pickaxe().identify(false);
 			freePickaxe = false;
 			reforges    = 0;
 			hardens     = 0;
@@ -329,13 +329,6 @@ public class Blacksmith extends NPC {
 				}
 				if (node.contains(FREE_PICKAXE)){
 					freePickaxe = node.getBoolean(FREE_PICKAXE);
-				} else {
-					//some for pre-3.1 saves, some from incorrect values from v3.1-BETA-1.0
-					if (favor >= 2500){
-						freePickaxe = true;
-					} else {
-						freePickaxe = false;
-					}
 				}
 				reforges = node.getInt( REFORGES );
 				hardens = node.getInt( HARDENS );

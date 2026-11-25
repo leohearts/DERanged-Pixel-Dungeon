@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +24,17 @@ package com.shatteredpixel.shatteredpixeldungeon.scenes;
 import com.shatteredpixel.shatteredpixeldungeon.Chrome;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
-import com.shatteredpixel.shatteredpixeldungeon.ui.Archs;
 import com.shatteredpixel.shatteredpixeldungeon.ui.ExitButton;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Icons;
+import com.shatteredpixel.shatteredpixeldungeon.ui.TitleBackground;
 import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.StyledButton;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
-import com.shatteredpixel.shatteredpixeldungeon.ui.changelist.v3_X_Changes;
 import com.shatteredpixel.shatteredpixeldungeon.windows.IconTitle;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.NinePatch;
 import com.watabou.noosa.ui.Component;
+import com.watabou.utils.RectF;
 
 public class ChangesScene extends PixelScene {
 
@@ -50,24 +50,28 @@ public class ChangesScene extends PixelScene {
 		int w = Camera.main.width;
 		int h = Camera.main.height;
 
+		RectF insets = getCommonInsets();
+
 		int elementWidth = PixelScene.landscape() ? 250 : 120;
 
-		Archs archs = new Archs();
-		archs.setSize(w, h);
-		add(archs);
+		TitleBackground BG = new TitleBackground(w, h);
+		add(BG);
 
-		ExitButton btnExit = new ExitButton();
-		btnExit.setPos(w - btnExit.width(), 0);
-		add(btnExit);
+		w -= insets.left + insets.right;
+		h -= insets.top + insets.bottom;
 
 		IconTitle title = new IconTitle(Icons.CHANGES.get(), Messages.get(this, "title"));
 		title.setSize(200, 0);
 		title.setPos(
-				(w - title.reqWidth()) / 2f,
-				(20 - title.height()) / 2f
+				insets.left + (w - title.reqWidth()) / 2f,
+				insets.top + (20 - title.height()) / 2f
 		);
 		align(title);
 		add(title);
+
+		ExitButton btnExit = new ExitButton();
+		btnExit.setPos( insets.left + w - btnExit.width(), insets.top );
+		add( btnExit );
 
 		ChangesMessage msg = new ChangesMessage();
 		msg.setSize(elementWidth, 0);
@@ -88,8 +92,8 @@ public class ChangesScene extends PixelScene {
 
 		float elementHeight = msg.height() + BTN_HEIGHT + GAP;
 
-		float top = 16 + (h - 16 - elementHeight)/2f;
-		float left = (w-elementWidth)/2f;
+		float top = insets.top + 16 + (h - 16 - elementHeight)/2f;
+		float left = insets.left + (w-elementWidth)/2f;
 
 		msg.setPos(left, top);
 		align(msg);

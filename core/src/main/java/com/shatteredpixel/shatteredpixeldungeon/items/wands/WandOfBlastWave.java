@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,9 +29,11 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.FlavourBuff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Paralysis;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Effects;
 import com.shatteredpixel.shatteredpixeldungeon.effects.MagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Pushing;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.features.Door;
@@ -91,7 +93,7 @@ public class WandOfBlastWave extends DamageWand {
 				if ((ch.isAlive() || ch.flying || !Dungeon.level.pit[ch.pos])
 						&& ch.pos == bolt.collisionPos + i) {
 					Ballistica trajectory = new Ballistica(ch.pos, ch.pos + i, Ballistica.MAGIC_BOLT);
-					int strength = 1 + Math.round(buffedLvl() / 2f);
+					int strength = Math.round(1.5f + buffedLvl() / 2f);
 					throwChar(ch, trajectory, strength, false, true, this);
 				}
 
@@ -169,7 +171,7 @@ public class WandOfBlastWave extends DamageWand {
 					if (ch.isActive()) {
 						Paralysis.prolong(ch, Paralysis.class, 1 + finalDist/2f);
 					} else if (ch == Dungeon.hero){
-						if (cause instanceof WandOfBlastWave){
+						if (cause instanceof Wand || cause instanceof Weapon.Enchantment){
 							Badges.validateDeathFromFriendlyMagic();
 						}
 						GLog.n(Messages.get(WandOfBlastWave.class, "knockback_ondeath"));
@@ -197,7 +199,7 @@ public class WandOfBlastWave extends DamageWand {
 
 		if (defender.buff(Paralysis.class) != null && defender.buff(BWaveOnHitTracker.class) == null){
 			defender.buff(Paralysis.class).detach();
-			int dmg = Random.NormalIntRange(6+buffedLvl(), 12+2*buffedLvl());
+			int dmg = Hero.heroDamageIntRange(8+2*buffedLvl(), 12+3*buffedLvl());
 			defender.damage(Math.round(procChanceMultiplier(attacker) * dmg), this);
 			BlastWave.blast(defender.pos);
 			Sample.INSTANCE.play( Assets.Sounds.BLAST );
@@ -251,6 +253,9 @@ public class WandOfBlastWave extends DamageWand {
 			x = (pos % Dungeon.level.width()) * DungeonTilemap.SIZE + (DungeonTilemap.SIZE - width) / 2;
 			y = (pos / Dungeon.level.width()) * DungeonTilemap.SIZE + (DungeonTilemap.SIZE - height) / 2;
 
+			resetColor();
+			scale.set(0);
+
 			time = TIME_TO_FADE;
 			this.size = size;
 		}
@@ -273,10 +278,17 @@ public class WandOfBlastWave extends DamageWand {
 		}
 
 		public static void blast(int pos, float radius) {
+			blast(pos, radius, -1);
+		}
+
+		public static void blast(int pos, float radius, int hardLight){
 			Group parent = Dungeon.hero.sprite.parent;
 			BlastWave b = (BlastWave) parent.recycle(BlastWave.class);
 			parent.bringToFront(b);
 			b.reset(pos, radius);
+			if (hardLight != -1){
+				b.hardlight(hardLight);
+			}
 		}
 
 	}

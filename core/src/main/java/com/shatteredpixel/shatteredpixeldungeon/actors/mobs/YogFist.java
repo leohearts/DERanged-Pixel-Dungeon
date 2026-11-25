@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -349,6 +349,21 @@ public abstract class YogFist extends Mob {
 		}
 
 		@Override
+		public int incomingDOT() {
+			if (!needsIncomingDOTUpdate){
+				return cachedIncomingDOT;
+			}
+			int total = super.incomingDOT();
+			//we have special immunity rules to burning, so account for that here
+			Burning b = buff(Burning.class);
+			if (b != null){
+				total -= b.totalIncomingDMG();
+			}
+			cachedIncomingDOT = total;
+			return total;
+		}
+
+		@Override
 		protected void zap() {
 			spend( 1f );
 
@@ -429,8 +444,8 @@ public abstract class YogFist extends Mob {
 					b = new Bleeding();
 				}
 				b.announced = false;
-				b.set(dmg*.6f);
 				b.attachTo(this);
+				b.set(dmg*.6f);
 				sprite.showStatus(CharSprite.WARNING, Messages.titleCase(b.name()) + " " + (int)b.level());
 			} else{
 				super.damage(dmg, src);
@@ -549,7 +564,7 @@ public abstract class YogFist extends Mob {
 		public void damage(int dmg, Object src) {
 			int beforeHP = HP;
 			super.damage(dmg, src);
-			if (isAlive() && beforeHP > HT/2 && HP < HT/2){
+			if (isAlive() && beforeHP > HT/2 && HP <= HT/2){
 				HP = HT/2;
 				Buff.prolong( Dungeon.hero, Blindness.class, Blindness.DURATION*1.5f );
 				int i;
@@ -625,7 +640,7 @@ public abstract class YogFist extends Mob {
 		public void damage(int dmg, Object src) {
 			int beforeHP = HP;
 			super.damage(dmg, src);
-			if (isAlive() && beforeHP > HT/2 && HP < HT/2){
+			if (isAlive() && beforeHP > HT/2 && HP <= HT/2){
 				HP = HT/2;
 				Light l = Dungeon.hero.buff(Light.class);
 				if (l != null){

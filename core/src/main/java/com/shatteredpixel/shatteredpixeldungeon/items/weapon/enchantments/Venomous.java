@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2019 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,35 +27,42 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Poison;
 import com.shatteredpixel.shatteredpixeldungeon.effects.CellEmitter;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.PoisonParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
-import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite.Glowing;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.watabou.utils.Random;
 
 public class Venomous extends Weapon.Enchantment {
 
-	private static Glowing PURPLE = new Glowing( 0x4400AA );
-	
+	private static ItemSprite.Glowing PURPLE = new ItemSprite.Glowing( 0x4400AA );
+
 	@Override
-	public int proc( Weapon weapon, Char attacker, Char defender, int damage ) {
-		int level = Math.max( 0, weapon.level() );
+	public int proc(Weapon weapon, Char attacker, Char defender, int damage) {
+		int level = Math.max( 0, weapon.buffedLvl() );
 
-		// lvl 0 - 33%
-		// lvl 1 - 50%
-		// lvl 2 - 60%
-		float procChance;
-		procChance = (level+1f)/(level+3f) * procChanceMultiplier(attacker);
-
-		float powerMulti = Math.max(1f, procChance);
-
+		// flat 33% proc chance, effect scales with level
+		float procChance = 1/3f * procChanceMultiplier(attacker);
 		if (Random.Float() < procChance) {
-			Buff.affect( defender, Poison.class ).extend( (level/2f + 1) * powerMulti );
-			CellEmitter.center(defender.pos).burst( PoisonParticle.SPLASH, 5 );
+
+			float powerMulti = Math.max(1f, procChance);
+
+			//delays the poison's damage by 3 turns if the enemy had no poison on them already
+			Poison poison = defender.buff(Poison.class);
+			if (poison == null) {
+				poison = Buff.affect(defender, Poison.class);
+				poison.delay(3f);
+				poison = defender.buff(Poison.class);
+			}
+			if (poison != null){
+				poison.extend(powerMulti * ((level / 2f) + 3));
+			}
+			CellEmitter.center(defender.pos).burst(PoisonParticle.SPLASH, 5);
+
 		}
 
 		return damage;
 	}
-	
+
 	@Override
-	public Glowing glowing() {
+	public ItemSprite.Glowing glowing() {
 		return PURPLE;
 	}
 }

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,13 +41,11 @@ public class HallwayExitRoom extends HallwayRoom {
 
 		int exit = -1;
 		for ( Point p : getPoints()){
-			if (level.map[level.pointToCell(p)] == Terrain.STATUE_SP
-					|| level.map[level.pointToCell(p)] == Terrain.REGION_DECO_ALT){
+			if (level.map[level.pointToCell(p)] == Terrain.EXIT){
 				exit = level.pointToCell(p);
 				break;
 			}
 		}
-		Painter.set( level, exit, Terrain.EXIT );
 		level.transitions.add(new LevelTransition(level, exit, LevelTransition.Type.REGULAR_EXIT));
 
 	}

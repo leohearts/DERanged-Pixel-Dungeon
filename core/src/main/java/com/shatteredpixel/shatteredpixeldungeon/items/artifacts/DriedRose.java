@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.gun.LG.LG;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.gun.SG.SG;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.levels.AbyssLevel;
+import com.shatteredpixel.shatteredpixeldungeon.levels.VaultLevel;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.AlchemyScene;
@@ -135,7 +136,8 @@ public class DriedRose extends Artifact {
 		if (ghostID != 0){
 			actions.add(AC_DIRECT);
 		}
-		if (isIdentified() && !cursed){
+		//cannot outfit a rose that's cursed, unIDed, or in the vault to prevent smuggling exploits
+		if (isIdentified() && !cursed && !(Dungeon.level instanceof VaultLevel)){
 			actions.add(AC_OUTFIT);
 		}
 		if (weapon instanceof Gun) {
@@ -377,6 +379,7 @@ public class DriedRose extends Artifact {
 		
 		if (ghost != null){
 			ghost.updateRose();
+			ghost.HP = Math.min(ghost.HP+8, ghost.HT);
 		}
 
 		return super.upgrade();
@@ -453,6 +456,9 @@ public class DriedRose extends Artifact {
 					while (partialCharge > 1) {
 						ghost.HP++;
 						partialCharge--;
+						if (ghost.HP == ghost.HT){
+							partialCharge = 0;
+						}
 					}
 				} else {
 					partialCharge = 0;
@@ -537,7 +543,7 @@ public class DriedRose extends Artifact {
 				return false;
 			} if ( rose.level() >= rose.levelCap ){
 				GLog.i( Messages.get(this, "no_room") );
-				hero.spendAndNext(TIME_TO_PICK_UP);
+				hero.spendAndNext(pickupDelay());
 				return true;
 			} else {
 
@@ -550,7 +556,7 @@ public class DriedRose extends Artifact {
 
 				Sample.INSTANCE.play( Assets.Sounds.DEWDROP );
 				GameScene.pickUp(this, pos);
-				hero.spendAndNext(TIME_TO_PICK_UP);
+				hero.spendAndNext(pickupDelay());
 				return true;
 
 			}
@@ -662,17 +668,25 @@ public class DriedRose extends Artifact {
 		private void updateRose(){
 			if (rose == null) {
 				rose = Dungeon.hero.belongings.getItem(DriedRose.class);
+				if (rose != null) {
+					rose.ghost = this;
+					rose.ghostID = id();
+				}
 			}
 			
 			//same dodge as the hero
 			defenseSkill = (Dungeon.hero.lvl+4);
 			if (rose == null) return;
-			HT = 20 + 8*rose.level();
+			HT = 40 + 10*rose.level();
 		}
 
 		public Weapon weapon(){
 			if (rose != null)   return rose.weapon;
 			else                return null;
+		}
+
+		public void clearWeapon(){
+			if (rose != null) rose.weapon = null;
 		}
 
 		public Armor armor(){
@@ -752,8 +766,15 @@ public class DriedRose extends Artifact {
 				} else {
 					dmg += weapon().damageRoll(this);
 				}
-			} else {
-				dmg += Random.NormalIntRange(0, 5);
+				if (rose != null){
+					int excessStr = rose.ghostStrength()-weapon().STRReq();
+					if (excessStr > 0){
+						dmg += Random.NormalIntRange(0, excessStr);
+					}
+				}
+			} else if (rose != null) {
+				//1-5 to 1-10
+				dmg += Random.NormalIntRange(1, rose.ghostStrength()-8);
 			}
 			
 			return dmg;

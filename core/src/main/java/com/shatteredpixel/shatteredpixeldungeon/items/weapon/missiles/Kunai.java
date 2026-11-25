@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@ package com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Momentum;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 
@@ -35,13 +37,13 @@ public class Kunai extends MissileWeapon {
 		hitSoundPitch = 1.1f;
 		
 		tier = 3;
-		baseUses = 5;
+		baseUses = 8;
 	}
 
 	@Override
 	public int max(int lvl) {
 		return  4 * tier +                      //12 base, down from 15
-				(tier-1)*lvl;                   //scaling unchanged
+				tier*lvl;                       //scaling unchanged
 	}
 	
 	@Override
@@ -58,6 +60,9 @@ public class Kunai extends MissileWeapon {
 				int exStr = hero.STR() - STRReq();
 				if (exStr > 0) {
 					damage += Hero.heroDamageIntRange(0, exStr);
+				}
+				if (owner.buff(Momentum.class) != null && owner.buff(Momentum.class).freerunning()) {
+					damage = Math.round(damage * (1f + 0.15f * ((Hero) owner).pointsInTalent(Talent.PROJECTILE_MOMENTUM)));
 				}
 				return damage;
 			}

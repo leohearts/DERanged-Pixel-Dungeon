@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.HornOfPlenty;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.MedicKit;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.SandalsOfNature;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.SkeletonKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.UnstableSpellbook;
@@ -145,6 +146,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfIntuition;
 import com.shatteredpixel.shatteredpixeldungeon.items.stones.StoneOfShock;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.BrokenMagnifyingGlass;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ChaoticCenser;
+import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.CrackedSpyglass;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.CrystalBall;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.DimensionalSundial;
 import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.ExoticCrystals;
@@ -646,7 +648,7 @@ public class Generator {
 					Bow.class
 			};
 			WEP_T3.defaultProbs = new float[]{ 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 2 };
-			WEP_T3.probs = WEP_T1.defaultProbs.clone();
+			WEP_T3.probs = WEP_T3.defaultProbs.clone();
 			
 			WEP_T4.classes = new Class<?>[]{
 					Longsword.class,
@@ -868,12 +870,13 @@ public class Generator {
 					HornOfPlenty.class,
 					MasterThievesArmband.class,
 					SandalsOfNature.class,
+					SkeletonKey.class,
 					TalismanOfForesight.class,
 					TimekeepersHourglass.class,
 					UnstableSpellbook.class,
 					MedicKit.class
 			};
-			ARTIFACT.defaultProbs = new float[]{ 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0 };
+			ARTIFACT.defaultProbs = new float[]{ 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0 };
 			ARTIFACT.probs = ARTIFACT.defaultProbs.clone();
 
 			//Trinkets are unique like artifacts, but unlike them you can only have one at once
@@ -895,6 +898,7 @@ public class Generator {
 					ShardOfOblivion.class,
 					ChaoticCenser.class,
 					FerretTuft.class,
+					CrackedSpyglass.class,
 					//new trinkets
 					MagicalCompass.class,
 					CrystalBall.class,
@@ -904,7 +908,7 @@ public class Generator {
 					Necklace.class,
 					GrindStone.class
 			};
-			TRINKET.defaultProbs = new float[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1 };
+			TRINKET.defaultProbs = new float[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 			TRINKET.probs = TRINKET.defaultProbs.clone();
 
 			for (Category cat : Category.values()){
@@ -1035,7 +1039,8 @@ public class Generator {
 			case ARTIFACT:
 				Item item = randomArtifact();
 				//if we're out of artifacts, return a ring instead.
-				return item != null ? item : random(Category.RING);
+				//do not use decks for that ring, as the # of artifacts genned can vary by gameplay
+				return item != null ? item : randomUsingDefaults(Category.RING);
 			default:
 				if (cat.defaultProbs != null && cat.seed != null){
 					Random.pushGenerator(cat.seed);
@@ -1297,19 +1302,18 @@ public class Generator {
 					cat.dropped = bundle.getInt(cat.name().toLowerCase() + CATEGORY_DROPPED);
 				}
 
-				//pre-v3.0.0 conversion for artifacts specifically
+				//pre-v3.3.0 conversion for artifacts (addition of tome and key)
 				if (cat == Category.ARTIFACT && probs.length != cat.defaultProbs.length){
-					int tomeIDX = 5;
+					int keyIDX = 9;
 					int j = 0;
 					for (int i = 0; i < probs.length; i++){
-						if (i == tomeIDX){
-							cat.probs[j] = 0;
+						if (j == keyIDX){
+							cat.probs[j] = 1;
 							j++;
 						}
 						cat.probs[j] = probs[i];
 						j++;
 					}
-
 				}
 
 			}

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -326,14 +326,6 @@ public class PrisonBossLevel extends Level {
 			cell += width();
 		}
 
-		//pre-2.5.1 saves, if exit wasn't already added
-		if (exit() == entrance()) {
-			LevelTransition exit = new LevelTransition(this, pointToCell(levelExit), LevelTransition.Type.REGULAR_EXIT);
-			exit.right += 2;
-			exit.bottom += 3;
-			transitions.add(exit);
-		}
-
 		addCagesToCells();
 	}
 	
@@ -386,7 +378,7 @@ public class PrisonBossLevel extends Level {
 		addVisuals(); //this also resets existing visuals
 		traps.clear();
 
-		for (CustomTilemap t : customTiles){
+		for (CustomTilemap t : customTiles.toArray(new CustomTilemap[0])){
 			if (t instanceof FadingTraps){
 				((FadingTraps) t).remove();
 			}
@@ -450,6 +442,15 @@ public class PrisonBossLevel extends Level {
 				set(pointToCell(tenguCellDoor), Terrain.LOCKED_DOOR);
 				GameScene.updateMap(pointToCell(tenguCellDoor));
 
+				int tenguDoorPos = pointToCell(tenguCellDoor);
+				Heap h = heaps.get(tenguDoorPos);
+				if (h != null){
+					for (Item i : h.items){
+						drop(i, tenguDoorPos + width()).sprite.drop(tenguDoorPos);
+					}
+					h.destroy();
+				}
+
 				//moves intelligent allies with the hero, preferring closer pos to cell door
 				int doorPos = pointToCell(tenguCellDoor);
 				Mob.holdAllies(this, doorPos);
@@ -458,7 +459,7 @@ public class PrisonBossLevel extends Level {
 				tengu.state = tengu.HUNTING;
 				tengu.pos = tenguPos;
 				ChampionEnemy.rollWarp(tengu);
-				GameScene.add( tengu );
+				GameScene.add( tengu, 1 );
 				tengu.notice();
 
 				CellEmitter.get( tengu.pos ).burst( Speck.factory( Speck.WOOL ), 6 );
@@ -484,6 +485,7 @@ public class PrisonBossLevel extends Level {
 				Doom d = tengu.buff(Doom.class);
 				Actor.remove(tengu);
 				mobs.remove(tengu);
+				tengu.clearTime();
 				TargetHealthIndicator.instance.target(null);
 				tengu.sprite.kill();
 				if (d != null) tengu.add(d);
@@ -505,8 +507,7 @@ public class PrisonBossLevel extends Level {
 				
 				tengu.state = tengu.HUNTING;
 				tengu.pos = (arena.left + arena.width()/2) + width()*(arena.top+2);
-				GameScene.add(tengu);
-				tengu.timeToNow();
+				GameScene.add( tengu, 1 );
 				tengu.notice();
 
 				CellEmitter.get( tengu.pos ).burst( Speck.factory( Speck.WOOL ), 6 );
@@ -667,7 +668,7 @@ public class PrisonBossLevel extends Level {
 		Painter.fill(this, tenguCell, 1, Terrain.EMPTY);
 		buildFlagMaps();
 
-		for (CustomTilemap vis : customTiles){
+		for (CustomTilemap vis : customTiles.toArray(new CustomTilemap[0])){
 			if (vis instanceof FadingTraps){
 				((FadingTraps) vis).remove();
 			}

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.PetrifiedSeed;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.MiningLevel;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
+import com.shatteredpixel.shatteredpixeldungeon.levels.VaultLevel;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Random;
@@ -72,6 +73,9 @@ public class HighGrass {
 			
 		} else {
 			if (ch instanceof Hero && ((Hero) ch).canFurrowGrass()){
+				if(((Hero) ch).hasTalent(Talent.BARKSKIN, Talent.RK_WARDEN)){
+					Barkskin.conditionallyAppend(ch, (((Hero) ch).lvl* ((Hero) ch).pointsInTalent(Talent.BARKSKIN, Talent.RK_WARDEN))/3, 1 );
+				}
 				Level.set(pos, Terrain.FURROWED_GRASS);
 				freezeTrample = true;
 			} else {
@@ -131,6 +135,11 @@ public class HighGrass {
 
 				// absolute max drop rate is ~1/6.5 with footwear of nature, ~1/18 without
 				lootChance *= PetrifiedSeed.grassLootMultiplier();
+
+				//vault level spawns significantly fewer seeds from grass
+				if (Dungeon.level instanceof VaultLevel){
+					lootChance /= 3;
+				}
 
 				if (Random.Float() < lootChance) {
 					if (Random.Float() < PetrifiedSeed.stoneInsteadOfSeedChance()) {

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2025 Evan Debenham
+ * Copyright (C) 2014-2026 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -377,6 +377,7 @@ public class Toolbar extends Component {
 				arrow.x = left() + (width - arrow.width())/2;
 				arrow.y = bottom()-arrow.height-1;
 				arrow.angle = bottom() == camera().height ? 0 : 180;
+				PixelScene.align(arrow);
 			}
 
 			@Override
@@ -428,6 +429,7 @@ public class Toolbar extends Component {
 								if (b.misc() != null) items.add(0, b.misc());
 								if (b.artifact() != null) items.add(0, b.artifact());
 								if (b.armor() != null) items.add(0, b.armor());
+								if (b.secondWep() != null) items.add(0, b.secondWep());
 								if (b.weapon() != null) items.add(0, b.weapon());
 							}
 

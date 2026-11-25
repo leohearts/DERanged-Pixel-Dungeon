@@ -111,7 +111,7 @@ public class ExplosiveTracker extends Buff {
 		} else {
 			for (int i = 0; i < Dungeon.level.length(); i++){
 				if (fieldOfView[i]){
-					target.sprite.parent.add(new TargetedCell(i, 0xFF0000));
+					GameScene.targetedCell(i, 0xFF0000, 1f);
 				}
 			}
 		}
