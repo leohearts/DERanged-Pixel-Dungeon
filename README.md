@@ -7,6 +7,17 @@ ReARranged game fully supports Korean language basically. This game's content do
 
 Started community-based translation on [Transifex](https://explore.transifex.com/rearranged-pixel-dungeon/rearranged-pixel-dungeon/), please consider joining translation work if you are interested.
 
+## What is added on top of [TrashboxBobylev/DERanged-Pixel-Dungeon](https://github.com/TrashboxBobylev/DERanged-Pixel-Dungeon)?
+This fork starts from DERanged 1.2 and is published on its own [releases page](https://github.com/leohearts/DERanged-Pixel-Dungeon/releases).
+- Rebased on Shattered Pixel Dungeon v4.0.2, bringing in the v3.3 and v4.0 content updates.
+- Complete Simplified Chinese translation: every missing string is translated and many mistranslations are fixed.
+- New tier 4 talent, Deep Pockets, available with every armor ability: +5 slots per point (max 2) for the backpack and every other container except the cheese chest.
+- Reload Weapon key binding (default V) for the gun in the main hand.
+- Keys open locked doors and chests on temple and abyss floors.
+- Shops charge the price shown in the window when prices are randomized (Scam, Kromer-based items), instead of rolling a new one.
+- Android: the game no longer draws under the navigation bar, status bar or display cutout.
+- Crash fixes: entering the Abyss, and the sniper's follow-up shot after reloading a save.
+
 ## What is added on top of ReARranged?
 - Playable Rat King omniclass, with all ReARranged classes added to it for a ton of effects and 36 subclass talents!
 - The Abyss, the endless zone from my mods, with all cracked enemies and chaosstones to collect. Earn as many as you can!
