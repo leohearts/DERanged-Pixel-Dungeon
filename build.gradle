@@ -15,8 +15,8 @@ allprojects {
         appName = 'DERanged Pixel Dungeon'
         appPackageName = 'com.trashboxbobylev.derangedpixeldungeon'
 
-        appVersionCode = 860
-        appVersionName = '1.2.0'
+        appVersionCode = 861
+        appVersionName = '1.2.3'
         appVersionCode += 71
         appVersionName += '_based_on_4.0.2'
 
