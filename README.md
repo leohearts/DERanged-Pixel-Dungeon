@@ -11,10 +11,10 @@ Started community-based translation on [Transifex](https://explore.transifex.com
 This fork starts from DERanged 1.2 and is published on its own [releases page](https://github.com/leohearts/DERanged-Pixel-Dungeon/releases).
 - Rebased on Shattered Pixel Dungeon v4.0.2, bringing in the v3.3 and v4.0 content updates.
 - Complete Simplified Chinese translation: every missing string is translated and many mistranslations are fixed.
-- New tier 4 talent, Deep Pockets, available with every armor ability: +5 slots per point (max 2) for the backpack and every other container except the cheese chest.
+- New tier 4 talent, Deep Pockets, for every hero: +5 slots per point (max 2) for every container except for the cheese chest.
 - Reload Weapon key binding (default V) for the gun in the main hand.
-- Keys open locked doors and chests on temple and abyss floors.
-- Shops charge the price shown in the window when prices are randomized (Scam, Kromer-based items), instead of rolling a new one.
+- fix for upstream v4.0.2 so keys also work with subfloors such as the temple and abyss.
+- Shops charge the price as shown in window (Scam, Kromer-based items), instead of rolling a new one.
 - Android: the game no longer draws under the navigation bar, status bar or display cutout.
 - Crash fixes: entering the Abyss, and the sniper's follow-up shot after reloading a save.
 
