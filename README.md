@@ -5,8 +5,6 @@
 
 ReARranged game fully supports Korean language basically. This game's content doesn't. English language is supported too, which is translated by ChatGPT, with additional content and Archer strings being written in English by me, TrashboxBobylev.
 
-Started community-based translation on [Transifex](https://explore.transifex.com/rearranged-pixel-dungeon/rearranged-pixel-dungeon/), please consider joining translation work if you are interested.
-
 ## What is added on top of [TrashboxBobylev/DERanged-Pixel-Dungeon](https://github.com/TrashboxBobylev/DERanged-Pixel-Dungeon)?
 This fork starts from DERanged 1.2 and is published on its own [releases page](https://github.com/leohearts/DERanged-Pixel-Dungeon/releases).
 - Rebased on Shattered Pixel Dungeon v4.0.2, bringing in the v3.3 and v4.0 content updates.
