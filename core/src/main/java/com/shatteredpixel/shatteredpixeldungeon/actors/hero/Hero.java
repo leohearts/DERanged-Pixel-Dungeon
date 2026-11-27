@@ -748,20 +748,6 @@ public class Hero extends Char {
 //				|| (tier == 4 && armorAbility == null));
 	}
 
-	//number of talent tiers shown as unlocked in the talents pane
-	public int tiersUnlocked() {
-		int tiers = 1;
-		while (tiers < Talent.MAX_TALENT_TIERS && lvl+1 >= Talent.tierLevelThresholds[tiers+1]){
-			tiers++;
-		}
-		if (tiers > 2 && subClass == HeroSubClass.NONE){
-			tiers = 2;
-		} else if (tiers > 3 && armorAbility == null){
-			tiers = 3;
-		}
-		return tiers;
-	}
-
 	public int talentPointsAvailable(int tier){
 		if (tier == 999)
 			return 999;

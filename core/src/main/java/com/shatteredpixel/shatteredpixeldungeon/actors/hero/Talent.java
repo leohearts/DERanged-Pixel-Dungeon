@@ -786,6 +786,7 @@ public enum Talent {
 
 	//universal T4
 	HEROIC_ENERGY				(43, 0, 4), //See icon() and title() for special logic for this one
+	DEEP_POCKETS				(40, 0, 2), //added to every armor ability, see initArmorTalents()
 	//Ratmogrify T4
 	RATSISTANCE					(40, 12, 4),
 	RATLOMACY					(41, 12, 4),
@@ -1633,6 +1634,9 @@ public enum Talent {
 
 	public static void onTalentUpgraded( Hero hero, Talent talent ){
 		//universal
+		if (talent == DEEP_POCKETS){
+			Item.updateQuickslot(); //inventory displays resize for the new slots
+		}
 		if (talent == BETTER_CHOICE){
 			switch (hero.pointsInTalent(Talent.BETTER_CHOICE)) {
 				case 0: default:
@@ -3257,6 +3261,7 @@ public enum Talent {
 		for (Talent t : abil.talents()){
 			talents.get(3).put(t, 0);
 		}
+		talents.get(3).put(DEEP_POCKETS, 0);
 		return talents;
 	}
 

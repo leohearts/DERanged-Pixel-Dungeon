@@ -185,7 +185,7 @@ public class InventoryPane extends Component {
 		add(promptTxt);
 
 		bagItems = new ArrayList<>();
-		for (int i = 0; i < 20 + 5; i++){ //enough slots for the tier 4 extra row
+		for (int i = 0; i < 20 + 10; i++){ //enough slots for the tier 4 extra row
 			InventorySlot btn = new InventoryPaneSlot(null);
 			bagItems.add(btn);
 			add(btn);
@@ -212,9 +212,9 @@ public class InventoryPane extends Component {
 		height = paneHeight();
 	}
 
-	//an extra row of slots appears once containers gain extra capacity
+	//the pane shows 10 slots per row, extra container capacity adds rows
 	public static int paneHeight(){
-		return HEIGHT + (Bag.extraSlots() > 0 ? SLOT_HEIGHT+1 : 0);
+		return HEIGHT + (int)Math.ceil(Bag.extraSlots()/10f) * (SLOT_HEIGHT+1);
 	}
 
 	@Override

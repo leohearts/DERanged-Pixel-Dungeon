@@ -144,10 +144,14 @@ public class OmniAbility extends ArmorAbility implements TrinityStorage {
     public static LinkedHashMap<Talent, Integer> transferTalents(ArmorAbility armorAbility) {
         LinkedHashMap<Talent, Integer> talents = new LinkedHashMap<>();
         if(hero.talents.size() < 4) return talents;
-        Iterator<Integer> iterator = hero.talents.get(3).values().iterator();
+        //points are carried over by position, deep pockets isn't part of any ability so it keeps its own
+        LinkedHashMap<Talent, Integer> old = new LinkedHashMap<>(hero.talents.get(3));
+        Integer pockets = old.remove(Talent.DEEP_POCKETS);
+        Iterator<Integer> iterator = old.values().iterator();
         for(Talent talent : armorAbility.talents()) {
             talents.put(talent, iterator.hasNext() ? iterator.next() : 0);
         }
+        talents.put(Talent.DEEP_POCKETS, pockets == null ? 0 : pockets);
 
         return talents;
     }

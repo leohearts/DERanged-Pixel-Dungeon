@@ -26,6 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.LostInventory;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndQuickBag;
@@ -55,9 +56,9 @@ public class Bag extends Item implements Iterable<Item> {
 		return 20 + extraSlots(); // default container size
 	}
 
-	//every container except the cheese chest gains a row of slots once tier 4 talents are unlocked
+	//every container except the cheese chest gains 5 slots per point in the deep pockets talent
 	public static int extraSlots(){
-		return Dungeon.hero != null && Dungeon.hero.tiersUnlocked() >= 4 ? 5 : 0;
+		return Dungeon.hero != null ? 5 * Dungeon.hero.pointsInTalent(Talent.DEEP_POCKETS) : 0;
 	}
 
 	//if an item is being quick-used from the bag, the bag should take on its targeting properties
